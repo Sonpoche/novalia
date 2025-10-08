@@ -1,0 +1,294 @@
+/**
+ * Style de l'interface d'administration
+ * Chemin: /wp-content/plugins/devis-demenagement/assets/css/admin-style.css
+ */
+
+/* En-tête des pages admin */
+.wrap h1 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Tables admin */
+.wp-list-table {
+    margin-top: 20px;
+}
+
+.wp-list-table th {
+    font-weight: 600;
+    background: #f0f0f1;
+}
+
+.wp-list-table td {
+    vertical-align: middle;
+}
+
+.wp-list-table tr:hover {
+    background: #f6f7f7;
+}
+
+/* Formulaire de paramètres */
+.form-table {
+    margin-top: 20px;
+}
+
+.form-table th {
+    width: 250px;
+    font-weight: 600;
+}
+
+.form-table input[type="text"],
+.form-table input[type="email"],
+.form-table input[type="number"],
+.form-table textarea {
+    padding: 8px 12px;
+}
+
+.form-table input[type="number"] {
+    width: 150px;
+}
+
+.form-table .description {
+    font-style: italic;
+    color: #646970;
+    margin-top: 5px;
+}
+
+.form-table .description strong {
+    color: #2271b1;
+}
+
+.form-table .description a {
+    color: #2271b1;
+    text-decoration: underline;
+}
+
+/* Statuts des devis */
+.devis-status {
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.devis-status-nouveau {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffc107;
+}
+
+.devis-status-traite {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #28a745;
+}
+
+.devis-status-annule {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #dc3545;
+}
+
+/* Boutons personnalisés */
+.button.button-primary {
+    background: #2271b1;
+    border-color: #2271b1;
+    font-weight: 600;
+}
+
+.button.button-primary:hover {
+    background: #135e96;
+    border-color: #135e96;
+}
+
+/* Section d'instructions */
+.wrap h2 {
+    margin-top: 30px;
+}
+
+.wrap > div[style*="background"] {
+    margin-top: 20px;
+}
+
+.wrap > div[style*="background"] h3 {
+    margin-top: 0;
+    color: #2271b1;
+}
+
+.wrap > div[style*="background"] ol {
+    margin-left: 20px;
+}
+
+.wrap > div[style*="background"] code {
+    background: white;
+    padding: 10px 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    display: inline-block;
+    margin: 10px 0;
+    font-family: 'Courier New', monospace;
+    color: #d63384;
+    font-size: 14px;
+}
+
+/* Notices améliorées */
+.notice {
+    margin: 20px 0;
+    padding: 15px;
+}
+
+.notice.notice-success {
+    border-left-color: #00a32a;
+}
+
+.notice.notice-success p {
+    margin: 0;
+    font-weight: 500;
+}
+
+/* Pagination */
+.tablenav {
+    margin-top: 20px;
+}
+
+.tablenav-pages {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.tablenav-pages a,
+.tablenav-pages span.current {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    text-decoration: none;
+}
+
+.tablenav-pages a:hover {
+    background: #f0f0f1;
+}
+
+.tablenav-pages span.current {
+    background: #2271b1;
+    color: white;
+    border-color: #2271b1;
+    font-weight: 600;
+}
+
+/* Amélioration de la lisibilité des emails */
+.wp-list-table td a[href^="mailto"] {
+    color: #2271b1;
+    text-decoration: underline;
+}
+
+.wp-list-table td small {
+    display: block;
+    line-height: 1.6;
+}
+
+/* Style pour les titres de sections */
+.form-table th[colspan="2"] h2 {
+    margin: 0;
+    padding: 15px 0;
+    border-bottom: 2px solid #2271b1;
+    color: #1d2327;
+}
+
+/* Gestion des objets */
+.wp-list-table input[type="text"].regular-text {
+    width: 100%;
+}
+
+.wp-list-table input[type="number"] {
+    width: 100px;
+    text-align: center;
+}
+
+.wp-list-table input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+/* Style du submit principal */
+p.submit {
+    padding-top: 20px;
+    border-top: 1px solid #ddd;
+}
+
+p.submit .button-primary {
+    padding: 10px 30px;
+    height: auto;
+    font-size: 15px;
+}
+
+/* Responsive admin */
+@media screen and (max-width: 782px) {
+    .form-table th,
+    .form-table td {
+        display: block;
+        width: 100%;
+        padding: 10px 0;
+    }
+    
+    .form-table th {
+        border-bottom: none;
+        padding-bottom: 5px;
+    }
+    
+    .wp-list-table {
+        font-size: 13px;
+    }
+    
+    .wp-list-table td {
+        padding: 8px;
+    }
+}
+
+/* Messages d'aide visuels */
+.form-table .description {
+    display: flex;
+    align-items: start;
+    gap: 8px;
+}
+
+.form-table .description::before {
+    content: "ℹ️";
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+/* Amélioration visuelle des inputs */
+.form-table input:focus,
+.form-table textarea:focus {
+    border-color: #2271b1;
+    box-shadow: 0 0 0 1px #2271b1;
+}
+
+/* Statistiques en haut de l'historique */
+.wrap > p {
+    background: #f0f6fc;
+    padding: 15px 20px;
+    border-radius: 6px;
+    border-left: 4px solid #2271b1;
+    font-size: 15px;
+}
+
+.wrap > p strong {
+    color: #2271b1;
+    font-size: 18px;
+}
+
+/* Amélioration de l'espacement */
+.devis-categorie {
+    margin-bottom: 40px;
+}
+
+.devis-categorie:last-child {
+    margin-bottom: 0;
+}
