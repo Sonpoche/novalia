@@ -1,6 +1,6 @@
 /**
  * Autocomplétion des adresses et gestion de la carte
- * Utilise l'API Nominatim (OpenStreetMap) et Leaflet
+ * VERSION CORRIGÉE - Carte fonctionne dès le premier affichage
  * 
  * @package NovaliaDevis
  */
@@ -29,7 +29,6 @@
     function initAddressAutocomplete() {
         let searchTimeout;
         
-        // Gestion de l'autocomplétion pour les deux champs
         $('.nd-address-autocomplete').each(function() {
             const $input = $(this);
             const inputId = $input.attr('id');
@@ -50,7 +49,6 @@
                 }, 300);
             });
             
-            // Fermer les résultats si on clique ailleurs
             $(document).on('click', function(e) {
                 if (!$(e.target).closest('.nd-input-wrapper').length) {
                     $('.nd-autocomplete-results').hide();
@@ -115,22 +113,14 @@
      */
     function selectAddress(data, $input) {
         const inputId = $input.attr('id');
-        const type = inputId.replace('address_', ''); // 'from' ou 'to'
+        const type = inputId.replace('address_', '');
         
-        // Remplir le champ
         $input.val(data.label);
-        
-        // Stocker les coordonnées
         $('#lat_' + type).val(data.lat);
         $('#lon_' + type).val(data.lon);
-        
-        // Fermer les suggestions
         $input.siblings('.nd-autocomplete-results').hide();
         
-        // Calculer la distance si les deux adresses sont renseignées
         calculateDistance();
-        
-        // Mettre à jour la carte
         updateMap();
     }
     
@@ -163,13 +153,9 @@
             success: function(response) {
                 if (response.success) {
                     const distance = response.distance;
-                    
-                    // Afficher la distance
                     $('#distance').val(distance);
                     $('#distance_value').text(distance.toFixed(2) + ' km');
                     $('#distance_result').slideDown();
-                    
-                    // Afficher le bouton de la carte
                     $('#nd-map').show();
                 }
             },
@@ -181,6 +167,7 @@
     
     /**
      * Initialisation du toggle de la carte
+     * FIX : Initialiser la carte AVANT le premier toggle
      */
     function initMapToggle() {
         $('#nd-toggle-map').on('click', function() {
@@ -193,43 +180,76 @@
                 $showText.show();
                 $hideText.hide();
             } else {
-                $mapWrapper.slideDown();
-                $showText.hide();
-                $hideText.show();
-                
-                // Initialiser la carte si nécessaire
+                // FIX : Initialiser la carte AVANT de l'afficher
                 if (!map) {
                     initMap();
                 }
+                
+                $mapWrapper.slideDown(400, function() {
+                    // FIX : Forcer le refresh de la carte après l'animation
+                    if (map) {
+                        setTimeout(function() {
+                            map.invalidateSize();
+                            updateMap();
+                        }, 50);
+                    }
+                });
+                
+                $showText.hide();
+                $hideText.show();
             }
         });
     }
     
     /**
-     * Initialisation de la carte Leaflet (lazy loading)
+     * Initialisation de la carte Leaflet
+     * FIX : Meilleure gestion de l'initialisation
      */
     function initMap() {
-        // Créer la carte centrée sur Genève, Suisse
-        map = L.map('nd-leaflet-map').setView([46.2044, 6.1432], 12);
-        
-        // Ajouter le layer OpenStreetMap
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap',
-            maxZoom: 18,
-            loading: 'lazy' // Lazy loading des tuiles
-        }).addTo(map);
-        
-        // Forcer le redimensionnement après chargement
-        setTimeout(function() {
-            map.invalidateSize();
-        }, 100);
-        
-        // Mettre à jour avec les adresses actuelles
-        updateMap();
+        try {
+            // Vérifier que Leaflet est chargé
+            if (typeof L === 'undefined') {
+                console.error('Leaflet non chargé');
+                return;
+            }
+            
+            // Vérifier que le container existe
+            const container = document.getElementById('nd-leaflet-map');
+            if (!container) {
+                console.error('Container carte introuvable');
+                return;
+            }
+            
+            // Créer la carte
+            map = L.map('nd-leaflet-map', {
+                center: [46.2044, 6.1432],
+                zoom: 12,
+                scrollWheelZoom: false
+            });
+            
+            // Ajouter le layer OpenStreetMap
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap',
+                maxZoom: 18
+            }).addTo(map);
+            
+            console.log('Carte initialisée avec succès');
+            
+            // FIX : Invalider la taille après un court délai
+            setTimeout(function() {
+                if (map) {
+                    map.invalidateSize();
+                    updateMap();
+                }
+            }, 250);
+            
+        } catch(error) {
+            console.error('Erreur initialisation carte:', error);
+        }
     }
     
     /**
-     * Mise à jour de la carte
+     * Mise à jour de la carte avec routing réel
      */
     function updateMap() {
         if (!map) return;
@@ -239,7 +259,7 @@
         const latTo = parseFloat($('#lat_to').val());
         const lonTo = parseFloat($('#lon_to').val());
         
-        // Supprimer les anciens marqueurs et ligne
+        // Supprimer anciens marqueurs
         if (markers.from) map.removeLayer(markers.from);
         if (markers.to) map.removeLayer(markers.to);
         if (routeLine) map.removeLayer(routeLine);
@@ -278,24 +298,44 @@
             bounds.push([latTo, lonTo]);
         }
         
-        // Tracer la ligne entre les deux points
+        // Route réelle via OSRM (évite le lac)
         if (latFrom && lonFrom && latTo && lonTo) {
-            routeLine = L.polyline([
-                [latFrom, lonFrom],
-                [latTo, lonTo]
-            ], {
-                color: '#3498db',
-                weight: 3,
-                opacity: 0.7
-            }).addTo(map);
-            
-            // Ajuster la vue pour afficher les deux points
-            map.fitBounds(bounds, { padding: [50, 50] });
+            // Appel API OSRM pour routing routier
+            $.get('https://router.project-osrm.org/route/v1/driving/' + 
+                  lonFrom + ',' + latFrom + ';' + lonTo + ',' + latTo + 
+                  '?overview=full&geometries=geojson', 
+            function(response) {
+                if (response.code === 'Ok' && response.routes.length > 0) {
+                    const coords = response.routes[0].geometry.coordinates;
+                    const latlngs = coords.map(c => [c[1], c[0]]);
+                    
+                    routeLine = L.polyline(latlngs, {
+                        color: '#2BBBAD',
+                        weight: 4,
+                        opacity: 0.7
+                    }).addTo(map);
+                    
+                    map.fitBounds(routeLine.getBounds(), { padding: [50, 50] });
+                }
+            }).fail(function() {
+                // Fallback : ligne droite si OSRM échoue
+                routeLine = L.polyline([
+                    [latFrom, lonFrom],
+                    [latTo, lonTo]
+                ], {
+                    color: '#2BBBAD',
+                    weight: 3,
+                    opacity: 0.7,
+                    dashArray: '10, 10'
+                }).addTo(map);
+                
+                map.fitBounds(bounds, { padding: [50, 50] });
+            });
         }
     }
     
     /**
-     * Échapper le HTML
+     * Échapper HTML
      */
     function escapeHtml(text) {
         const map = {

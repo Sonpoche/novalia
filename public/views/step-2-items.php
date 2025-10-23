@@ -1,216 +1,148 @@
 <?php
 /**
- * Template Étape 2 : Objets
+ * Étape 2 : Sélection des objets
+ * VERSION 3 : Quantités visibles + liste collapsible + pas de volume dans step
  *
  * @package NovaliaDevis
- * @subpackage Public/Views
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
+
+// Récupération des catégories et objets
+$categories = ND_Items_Manager::get_categories_with_items();
 ?>
 
 <div class="nd-step-content">
     
-    <div class="nd-step-header">
-        <h3><?php _e('Que souhaitez-vous déménager ?', 'novalia-devis'); ?></h3>
-        <p class="nd-step-description">
-            <?php _e('Sélectionnez vos objets et indiquez les quantités', 'novalia-devis'); ?>
-        </p>
-    </div>
+    <h3 class="nd-step-title">
+        <?php _e('Que souhaitez-vous déménager ?', 'novalia-devis'); ?>
+    </h3>
+    <p class="nd-step-description">
+        <?php _e('Sélectionnez vos objets et indiquez les quantités', 'novalia-devis'); ?>
+    </p>
     
-    <!-- Barre de recherche -->
-    <div class="nd-search-bar">
-        <input type="text" 
-               id="nd-items-search" 
-               class="nd-form-control" 
-               placeholder="<?php _e('🔍 Rechercher un objet...', 'novalia-devis'); ?>">
-    </div>
-    
-    <!-- Filtres par catégorie -->
-    <div class="nd-category-filters">
-        <button type="button" class="nd-category-btn nd-active" data-category="all">
-            <?php _e('Tout', 'novalia-devis'); ?>
-        </button>
-        <?php foreach ($items_by_category as $category => $items): ?>
-            <button type="button" 
-                    class="nd-category-btn" 
-                    data-category="<?php echo esc_attr(sanitize_title($category)); ?>">
-                <?php echo esc_html($category); ?>
-            </button>
-        <?php endforeach; ?>
-    </div>
-    
-    <!-- Liste des objets par catégorie -->
-    <div class="nd-items-list" id="nd-items-list">
-        <?php foreach ($items_by_category as $category => $items): ?>
-            <div class="nd-category-section" data-category="<?php echo esc_attr(sanitize_title($category)); ?>">
+    <!-- Grille d'objets -->
+    <div class="nd-items-wrapper">
+        <?php foreach ($categories as $category): ?>
+            
+            <div class="nd-category-section">
                 <h4 class="nd-category-title">
-                    <span class="nd-category-icon">📦</span>
-                    <?php echo esc_html($category); ?>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+                    <?php echo esc_html($category['name']); ?>
                 </h4>
                 
                 <div class="nd-items-grid">
-                    <?php foreach ($items as $item): ?>
+                    <?php foreach ($category['items'] as $item): ?>
+                        
                         <div class="nd-item-card" 
                              data-item-id="<?php echo $item['id']; ?>"
                              data-item-name="<?php echo esc_attr($item['name']); ?>"
-                             data-item-volume="<?php echo $item['volume']; ?>"
-                             data-category="<?php echo esc_attr(sanitize_title($category)); ?>">
+                             data-item-volume="<?php echo esc_attr($item['volume']); ?>">
                             
-                            <div class="nd-item-header">
-                                <span class="nd-item-name"><?php echo esc_html($item['name']); ?></span>
-                                <span class="nd-item-volume">
-                                    <?php echo number_format($item['volume'], 2, ',', ' '); ?> m³
-                                </span>
+                            <!-- Icône -->
+                            <div class="nd-item-icon">
+                                <?php if (!empty($item['icon_url'])): ?>
+                                    <img src="<?php echo esc_url($item['icon_url']); ?>" alt="<?php echo esc_attr($item['name']); ?>">
+                                <?php else: ?>
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                                <?php endif; ?>
                             </div>
                             
-                            <div class="nd-item-controls">
+                            <!-- Info -->
+                            <div class="nd-item-info">
+                                <h5 class="nd-item-name"><?php echo esc_html($item['name']); ?></h5>
+                                <p class="nd-item-volume"><?php echo number_format($item['volume'], 2); ?> m³</p>
+                            </div>
+                            
+                            <!-- Contrôles quantité -->
+                            <div class="nd-qty-controls">
                                 <button type="button" 
                                         class="nd-qty-btn nd-qty-minus" 
-                                        data-item-id="<?php echo $item['id']; ?>">
-                                    −
-                                </button>
+                                        data-item-id="<?php echo $item['id']; ?>">−</button>
                                 
                                 <input type="number" 
                                        class="nd-qty-input" 
                                        id="qty_<?php echo $item['id']; ?>"
                                        data-item-id="<?php echo $item['id']; ?>"
                                        min="0" 
-                                       max="999" 
+                                       max="999"
                                        value="0"
                                        readonly>
                                 
                                 <button type="button" 
                                         class="nd-qty-btn nd-qty-plus" 
-                                        data-item-id="<?php echo $item['id']; ?>">
-                                    +
-                                </button>
+                                        data-item-id="<?php echo $item['id']; ?>">+</button>
                             </div>
-                            
                         </div>
+                        
                     <?php endforeach; ?>
                 </div>
             </div>
+            
         <?php endforeach; ?>
     </div>
     
-    <!-- Section objets personnalisés -->
+    <!-- Objets personnalisés -->
     <div class="nd-custom-items-section">
-        <button type="button" class="nd-btn nd-btn-secondary" id="nd-add-custom-item">
-            <span class="nd-btn-icon">+</span>
+        <h4 class="nd-section-title">
             <?php _e('Ajouter un objet personnalisé', 'novalia-devis'); ?>
-        </button>
+        </h4>
         
-        <div id="nd-custom-items-list"></div>
-    </div>
-    
-    <!-- Modal objet personnalisé -->
-    <div class="nd-modal" id="nd-custom-item-modal" style="display: none;">
-        <div class="nd-modal-overlay"></div>
-        <div class="nd-modal-content">
-            <div class="nd-modal-header">
-                <h3><?php _e('Ajouter un objet personnalisé', 'novalia-devis'); ?></h3>
-                <button type="button" class="nd-modal-close">&times;</button>
+        <div style="display: grid; grid-template-columns: 1fr 120px 100px auto; gap: 16px; align-items: end; margin-bottom: 24px;">
+            <div class="nd-form-group">
+                <label for="custom_item_name" class="nd-form-label">
+                    <?php _e('Nom de l\'objet', 'novalia-devis'); ?>
+                </label>
+                <input type="text" 
+                       id="custom_item_name" 
+                       class="nd-input" 
+                       placeholder="Ex: Piano à queue">
             </div>
-            <div class="nd-modal-body">
-                <div class="nd-form-group">
-                    <label for="custom_item_name" class="nd-form-label">
-                        <?php _e('Nom de l\'objet', 'novalia-devis'); ?>
-                        <span class="nd-required">*</span>
-                    </label>
-                    <input type="text" 
-                           id="custom_item_name" 
-                           class="nd-form-control" 
-                           placeholder="<?php _e('Ex: Piano à queue', 'novalia-devis'); ?>">
-                </div>
-                
-                <div class="nd-form-group">
-                    <label for="custom_item_volume" class="nd-form-label">
-                        <?php _e('Volume estimé (m³)', 'novalia-devis'); ?>
-                        <span class="nd-required">*</span>
-                    </label>
-                    <input type="number" 
-                           id="custom_item_volume" 
-                           class="nd-form-control" 
-                           step="0.01" 
-                           min="0.01" 
-                           placeholder="<?php _e('Ex: 2.5', 'novalia-devis'); ?>">
-                    <small class="nd-form-help">
-                        <?php _e('Si vous ne connaissez pas le volume, estimez-le approximativement', 'novalia-devis'); ?>
-                    </small>
-                </div>
-                
-                <div class="nd-form-group">
-                    <label for="custom_item_quantity" class="nd-form-label">
-                        <?php _e('Quantité', 'novalia-devis'); ?>
-                    </label>
-                    <input type="number" 
-                           id="custom_item_quantity" 
-                           class="nd-form-control" 
-                           min="1" 
-                           value="1">
-                </div>
+            
+            <div class="nd-form-group">
+                <label for="custom_item_volume" class="nd-form-label">
+                    <?php _e('Volume (m³)', 'novalia-devis'); ?>
+                </label>
+                <input type="number" 
+                       id="custom_item_volume" 
+                       class="nd-input" 
+                       step="0.01"
+                       min="0.01"
+                       placeholder="1.50">
             </div>
-            <div class="nd-modal-footer">
-                <button type="button" class="nd-btn nd-btn-secondary nd-modal-close">
-                    <?php _e('Annuler', 'novalia-devis'); ?>
-                </button>
-                <button type="button" class="nd-btn nd-btn-primary" id="nd-save-custom-item">
-                    <?php _e('Ajouter', 'novalia-devis'); ?>
-                </button>
+            
+            <div class="nd-form-group">
+                <label for="custom_item_qty" class="nd-form-label">
+                    <?php _e('Quantité', 'novalia-devis'); ?>
+                </label>
+                <input type="number" 
+                       id="custom_item_qty" 
+                       class="nd-input" 
+                       min="1"
+                       value="1">
             </div>
+            
+            <button type="button" 
+                    id="add-custom-item" 
+                    class="nd-btn nd-btn-secondary"
+                    style="height: 44px;">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:18px;height:18px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                <?php _e('Ajouter', 'novalia-devis'); ?>
+            </button>
         </div>
     </div>
     
-    <!-- Options supplémentaires -->
-    <div class="nd-additional-options">
-        <h4><?php _e('Options supplémentaires', 'novalia-devis'); ?></h4>
-        
-        <label class="nd-checkbox-label">
-            <input type="checkbox" 
-                   id="need_packing" 
-                   name="need_packing" 
-                   value="1">
-            <span>
-                <?php _e('Service d\'emballage', 'novalia-devis'); ?>
-                <small>(<?php echo number_format($pricing['fee_packing'], 2, ',', ' '); ?> € / m³)</small>
-            </span>
-        </label>
-        
-        <label class="nd-checkbox-label">
-            <input type="checkbox" 
-                   id="need_insurance" 
-                   name="need_insurance" 
-                   value="1">
-            <span>
-                <?php _e('Assurance tous risques', 'novalia-devis'); ?>
-                <small>(<?php echo number_format($pricing['fee_insurance'], 2, ',', ' '); ?> € / m³)</small>
-            </span>
-        </label>
-    </div>
-    
-    <!-- Récapitulatif du volume -->
-    <div class="nd-volume-summary" id="nd-volume-summary">
-        <div class="nd-summary-card">
-            <div class="nd-summary-icon">📦</div>
-            <div class="nd-summary-content">
-                <span class="nd-summary-label"><?php _e('Objets sélectionnés', 'novalia-devis'); ?></span>
-                <span class="nd-summary-value" id="items_count">0</span>
-            </div>
+    <!-- Liste objets sélectionnés (collapsible) -->
+    <details style="margin-top: 32px; background: white; padding: 24px; border-radius: 12px; border: 2px solid #E5E7EB;">
+        <summary style="cursor: pointer; font-weight: 700; font-size: 1.125rem; color: #1A2332; display: flex; justify-content: space-between; align-items: center; padding: 4px;">
+            <span>📦 Objets sélectionnés</span>
+            <span style="font-size: 0.875rem; color: #6B7280; font-weight: 500;"><span id="items_count_label">0</span> objet(s)</span>
+        </summary>
+        <div id="selected-items-list" style="margin-top: 20px;">
+            <p style="text-align: center; color: #9CA3AF; padding: 40px 20px;">Aucun objet sélectionné</p>
         </div>
-        
-        <div class="nd-summary-card">
-            <div class="nd-summary-icon">📊</div>
-            <div class="nd-summary-content">
-                <span class="nd-summary-label"><?php _e('Volume total', 'novalia-devis'); ?></span>
-                <span class="nd-summary-value" id="total_volume">0 m³</span>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Champ caché pour le volume total -->
-    <input type="hidden" id="total_volume_hidden" name="total_volume" value="0">
+    </details>
     
 </div>
