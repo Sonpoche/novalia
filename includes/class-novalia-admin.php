@@ -8,11 +8,12 @@ class Novalia_Admin {
     
     public function __construct() {
         add_action('admin_menu', array($this, 'add_admin_menu'));
+        add_action('admin_init', array($this, 'handle_download_fiche'));
     }
     
     public function add_admin_menu() {
         add_menu_page(
-            'Novalia Déménagement',
+            'Novalia Demenagement',
             'Novalia',
             'manage_options',
             'novalia-demenagement',
@@ -58,6 +59,37 @@ class Novalia_Admin {
         );
     }
     
+    public function handle_download_fiche() {
+        if (!isset($_GET['novalia_download_fiche']) || !isset($_GET['devis_id'])) {
+            return;
+        }
+        
+        if (!current_user_can('manage_options')) {
+            wp_die('Acces non autorise');
+        }
+        
+        $devis_id = intval($_GET['devis_id']);
+        $devis = Novalia_Devis::get_devis($devis_id);
+        
+        if (!$devis || empty($devis->fiche_technique_pdf)) {
+            wp_die('Fiche technique introuvable');
+        }
+        
+        $upload_dir = wp_upload_dir();
+        $file_path = $upload_dir['basedir'] . $devis->fiche_technique_pdf;
+        
+        if (!file_exists($file_path)) {
+            wp_die('Fichier PDF introuvable');
+        }
+        
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: attachment; filename="fiche_technique_' . $devis->numero_devis . '.pdf"');
+        header('Content-Length: ' . filesize($file_path));
+        
+        readfile($file_path);
+        exit;
+    }
+    
     public function page_devis() {
         if (isset($_GET['action']) && $_GET['action'] === 'view' && isset($_GET['id'])) {
             $this->view_devis(intval($_GET['id']));
@@ -80,11 +112,11 @@ class Novalia_Admin {
                     <p class="stat-number"><?php echo Novalia_Devis::count_devis('en_attente'); ?></p>
                 </div>
                 <div class="stat-card green">
-                    <h3>Acceptés</h3>
+                    <h3>Acceptes</h3>
                     <p class="stat-number"><?php echo Novalia_Devis::count_devis('accepte'); ?></p>
                 </div>
                 <div class="stat-card red">
-                    <h3>Refusés</h3>
+                    <h3>Refuses</h3>
                     <p class="stat-number"><?php echo Novalia_Devis::count_devis('refuse'); ?></p>
                 </div>
             </div>
@@ -92,30 +124,31 @@ class Novalia_Admin {
             <div class="novalia-filters">
                 <a href="<?php echo admin_url('admin.php?page=novalia-demenagement'); ?>" class="button <?php echo !$statut_filter ? 'button-primary' : ''; ?>">Tous</a>
                 <a href="<?php echo admin_url('admin.php?page=novalia-demenagement&statut=en_attente'); ?>" class="button <?php echo $statut_filter === 'en_attente' ? 'button-primary' : ''; ?>">En attente</a>
-                <a href="<?php echo admin_url('admin.php?page=novalia-demenagement&statut=accepte'); ?>" class="button <?php echo $statut_filter === 'accepte' ? 'button-primary' : ''; ?>">Acceptés</a>
-                <a href="<?php echo admin_url('admin.php?page=novalia-demenagement&statut=refuse'); ?>" class="button <?php echo $statut_filter === 'refuse' ? 'button-primary' : ''; ?>">Refusés</a>
-                <a href="<?php echo admin_url('admin.php?page=novalia-demenagement&statut=annule'); ?>" class="button <?php echo $statut_filter === 'annule' ? 'button-primary' : ''; ?>">Annulés</a>
+                <a href="<?php echo admin_url('admin.php?page=novalia-demenagement&statut=accepte'); ?>" class="button <?php echo $statut_filter === 'accepte' ? 'button-primary' : ''; ?>">Acceptes</a>
+                <a href="<?php echo admin_url('admin.php?page=novalia-demenagement&statut=refuse'); ?>" class="button <?php echo $statut_filter === 'refuse' ? 'button-primary' : ''; ?>">Refuses</a>
+                <a href="<?php echo admin_url('admin.php?page=novalia-demenagement&statut=annule'); ?>" class="button <?php echo $statut_filter === 'annule' ? 'button-primary' : ''; ?>">Annules</a>
             </div>
             
             <table class="wp-list-table widefat fixed striped">
                 <thead>
                     <tr>
-                        <th>Numéro</th>
+                        <th>Numero</th>
                         <th>Client</th>
-                        <th>Date déménagement</th>
+                        <th>Date demenagement</th>
                         <th>Volume</th>
                         <th>Distance</th>
                         <th>Prix Standard</th>
                         <th>Prix Complet</th>
+                        <th>Fiche technique</th>
                         <th>Statut</th>
-                        <th>Date création</th>
+                        <th>Date creation</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (empty($devis_list)) : ?>
                         <tr>
-                            <td colspan="10" style="text-align: center;">Aucun devis trouvé</td>
+                            <td colspan="11" style="text-align: center;">Aucun devis trouve</td>
                         </tr>
                     <?php else : ?>
                         <?php foreach ($devis_list as $devis) : ?>
@@ -130,6 +163,15 @@ class Novalia_Admin {
                                 <td><?php echo number_format($devis->distance, 2); ?> km</td>
                                 <td><?php echo Novalia_Tarifs::format_prix($devis->prix_standard); ?></td>
                                 <td><?php echo Novalia_Tarifs::format_prix($devis->prix_complet); ?></td>
+                                <td>
+                                    <?php if (!empty($devis->fiche_technique_pdf)) : ?>
+                                        <a href="<?php echo admin_url('admin.php?novalia_download_fiche=1&devis_id=' . $devis->id); ?>" class="button button-small button-primary">
+                                            Telecharger PDF
+                                        </a>
+                                    <?php else : ?>
+                                        <span style="color: #999;">Non disponible</span>
+                                    <?php endif; ?>
+                                </td>
                                 <td>
                                     <span class="novalia-statut novalia-statut-<?php echo esc_attr($devis->statut); ?>">
                                         <?php echo Novalia_Devis::get_statut_label($devis->statut); ?>
@@ -160,7 +202,13 @@ class Novalia_Admin {
         <div class="wrap novalia-admin">
             <h1>Devis <?php echo esc_html($devis->numero_devis); ?></h1>
             
-            <a href="<?php echo admin_url('admin.php?page=novalia-demenagement'); ?>" class="button">← Retour à la liste</a>
+            <a href="<?php echo admin_url('admin.php?page=novalia-demenagement'); ?>" class="button">← Retour a la liste</a>
+            
+            <?php if (!empty($devis->fiche_technique_pdf)) : ?>
+                <a href="<?php echo admin_url('admin.php?novalia_download_fiche=1&devis_id=' . $devis->id); ?>" class="button button-primary" style="margin-left: 10px;">
+                    Telecharger Fiche Technique PDF
+                </a>
+            <?php endif; ?>
             
             <div class="novalia-devis-detail">
                 <div class="novalia-section">
@@ -175,7 +223,7 @@ class Novalia_Admin {
                             <td><a href="mailto:<?php echo esc_attr($devis->email_client); ?>"><?php echo esc_html($devis->email_client); ?></a></td>
                         </tr>
                         <tr>
-                            <th>Téléphone:</th>
+                            <th>Telephone:</th>
                             <td><?php echo esc_html($devis->telephone_client); ?></td>
                         </tr>
                     </table>
@@ -185,74 +233,70 @@ class Novalia_Admin {
                     <h2>Trajet</h2>
                     <table class="form-table">
                         <tr>
-                            <th>Départ:</th>
+                            <th>Depart:</th>
                             <td><?php echo esc_html($devis->adresse_depart); ?></td>
                         </tr>
                         <tr>
-                            <th>Arrivée:</th>
+                            <th>Arrivee:</th>
                             <td><?php echo esc_html($devis->adresse_arrivee); ?></td>
                         </tr>
                         <tr>
                             <th>Distance:</th>
                             <td><?php echo number_format($devis->distance, 2); ?> km</td>
                         </tr>
+                        <tr>
+                            <th>Date demenagement:</th>
+                            <td><?php echo Novalia_Devis::format_date($devis->date_demenagement); ?></td>
+                        </tr>
                     </table>
                 </div>
                 
                 <div class="novalia-section">
-                    <h2>Détails Déménagement</h2>
+                    <h2>Tarification</h2>
                     <table class="form-table">
-                        <tr>
-                            <th>Date déménagement:</th>
-                            <td><?php echo Novalia_Devis::format_date($devis->date_demenagement); ?></td>
-                        </tr>
                         <tr>
                             <th>Volume total:</th>
                             <td><?php echo number_format($devis->volume_total, 2); ?> m³</td>
                         </tr>
                         <tr>
-                            <th>Type:</th>
-                            <td><?php echo esc_html($devis->type_demenagement); ?></td>
+                            <th>Type demenagement:</th>
+                            <td><strong><?php echo strtoupper($devis->type_demenagement); ?></strong></td>
+                        </tr>
+                        <?php if ($devis->type_demenagement === 'complet') : ?>
+                            <tr>
+                                <th>Nombre de cartons:</th>
+                                <td><?php echo $devis->nombre_cartons; ?></td>
+                            </tr>
+                        <?php endif; ?>
+                        <tr>
+                            <th>Prix Standard:</th>
+                            <td><?php echo Novalia_Tarifs::format_prix($devis->prix_standard); ?></td>
                         </tr>
                         <tr>
-                            <th>Nombre de cartons:</th>
-                            <td><?php echo $devis->nombre_cartons; ?></td>
-                        </tr>
-                    </table>
-                </div>
-                
-                <div class="novalia-section">
-                    <h2>Prix</h2>
-                    <table class="form-table">
-                        <tr>
-                            <th>Standard:</th>
-                            <td><strong><?php echo Novalia_Tarifs::format_prix($devis->prix_standard); ?></strong></td>
-                        </tr>
-                        <tr>
-                            <th>Complet:</th>
-                            <td><strong><?php echo Novalia_Tarifs::format_prix($devis->prix_complet); ?></strong></td>
+                            <th>Prix Complet:</th>
+                            <td><?php echo Novalia_Tarifs::format_prix($devis->prix_complet); ?></td>
                         </tr>
                     </table>
                 </div>
                 
                 <div class="novalia-section">
                     <h2>Statut</h2>
-                    <select id="novalia-change-statut" data-devis-id="<?php echo $devis->id; ?>" class="regular-text">
+                    <select id="novalia-devis-statut" data-devis-id="<?php echo $devis->id; ?>" class="regular-text">
                         <option value="en_attente" <?php selected($devis->statut, 'en_attente'); ?>>En attente</option>
-                        <option value="accepte" <?php selected($devis->statut, 'accepte'); ?>>Accepté</option>
-                        <option value="refuse" <?php selected($devis->statut, 'refuse'); ?>>Refusé</option>
-                        <option value="annule" <?php selected($devis->statut, 'annule'); ?>>Annulé</option>
+                        <option value="accepte" <?php selected($devis->statut, 'accepte'); ?>>Accepte</option>
+                        <option value="refuse" <?php selected($devis->statut, 'refuse'); ?>>Refuse</option>
+                        <option value="annule" <?php selected($devis->statut, 'annule'); ?>>Annule</option>
                     </select>
                 </div>
                 
                 <div class="novalia-section">
-                    <h2>Objets à déménager</h2>
+                    <h2>Objets a demenager</h2>
                     <?php foreach ($devis->items_by_category as $categorie => $items) : ?>
                         <h3><?php echo esc_html($categorie); ?></h3>
                         <table class="wp-list-table widefat">
                             <thead>
                                 <tr>
-                                    <th>Quantité</th>
+                                    <th>Quantite</th>
                                     <th>Objet</th>
                                     <th>Volume unitaire</th>
                                     <th>Volume total</th>
@@ -278,12 +322,8 @@ class Novalia_Admin {
     
     public function page_objets() {
         if (isset($_POST['novalia_add_item']) && check_admin_referer('novalia_add_item')) {
-            Novalia_Items::add_item(
-                sanitize_text_field($_POST['nom']),
-                sanitize_text_field($_POST['categorie']),
-                floatval($_POST['volume'])
-            );
-            echo '<div class="notice notice-success"><p>Objet ajouté avec succès!</p></div>';
+            Novalia_Items::add_item($_POST);
+            echo '<div class="notice notice-success"><p>Objet ajoute avec succes!</p></div>';
         }
         
         $items_by_category = Novalia_Items::get_items_by_category();
@@ -292,31 +332,39 @@ class Novalia_Admin {
             <h1>Gestion des Objets</h1>
             
             <div class="novalia-add-form">
-                <h2>Ajouter un objet</h2>
+                <h2>Ajouter un nouvel objet</h2>
                 <form method="post">
                     <?php wp_nonce_field('novalia_add_item'); ?>
                     <table class="form-table">
                         <tr>
                             <th><label for="nom">Nom de l'objet</label></th>
-                            <td><input type="text" name="nom" id="nom" class="regular-text" required></td>
+                            <td><input type="text" id="nom" name="nom" class="regular-text" required></td>
                         </tr>
                         <tr>
-                            <th><label for="categorie">Catégorie</label></th>
+                            <th><label for="categorie">Categorie</label></th>
                             <td>
-                                <input type="text" name="categorie" id="categorie" class="regular-text" list="categories-list" required>
-                                <datalist id="categories-list">
-                                    <?php foreach (array_keys($items_by_category) as $cat) : ?>
-                                        <option value="<?php echo esc_attr($cat); ?>">
-                                    <?php endforeach; ?>
-                                </datalist>
+                                <select id="categorie" name="categorie" class="regular-text" required>
+                                    <option value="">Choisir une categorie</option>
+                                    <option value="Salon">Salon</option>
+                                    <option value="Salle a manger">Salle a manger</option>
+                                    <option value="Cuisine">Cuisine</option>
+                                    <option value="Chambre principale">Chambre principale</option>
+                                    <option value="Chambre enfant">Chambre enfant</option>
+                                    <option value="Bureau">Bureau</option>
+                                    <option value="Salle de bain">Salle de bain</option>
+                                    <option value="Entree">Entree</option>
+                                    <option value="Cave/Garage">Cave/Garage</option>
+                                    <option value="Exterieur">Exterieur</option>
+                                    <option value="Cartons">Cartons</option>
+                                </select>
                             </td>
                         </tr>
                         <tr>
                             <th><label for="volume">Volume (m³)</label></th>
-                            <td><input type="number" name="volume" id="volume" step="0.001" min="0" class="regular-text" required></td>
+                            <td><input type="number" id="volume" name="volume" class="regular-text" step="0.001" required></td>
                         </tr>
                     </table>
-                    <p class="submit">
+                    <p>
                         <input type="submit" name="novalia_add_item" class="button button-primary" value="Ajouter l'objet">
                     </p>
                 </form>
@@ -356,93 +404,58 @@ class Novalia_Admin {
             foreach ($_POST['tarif'] as $type => $valeur) {
                 Novalia_Tarifs::update_tarif($type, floatval($valeur));
             }
-            echo '<div class="notice notice-success"><p>Tarifs mis à jour avec succès!</p></div>';
+            echo '<div class="notice notice-success"><p>Tarifs mis a jour avec succes!</p></div>';
         }
         
-        // Récupérer tous les tarifs
         $tarifs_data = Novalia_Tarifs::get_all_tarifs();
         
-        // Fonction helper pour récupérer une valeur de tarif
         $get_tarif_value = function($type) use ($tarifs_data) {
             return isset($tarifs_data[$type]['valeur']) ? $tarifs_data[$type]['valeur'] : 0;
         };
         ?>
         <div class="wrap novalia-admin">
-            <h1>Gestion des Tarifs</h1>
+            <h1>Configuration des Tarifs</h1>
             
-            <form method="post">
+            <form method="post" class="novalia-tarifs-form">
                 <?php wp_nonce_field('novalia_update_tarifs'); ?>
                 
-                <h2>Tarifs de base</h2>
                 <table class="form-table">
                     <tr>
-                        <th><label>Prix de base</label></th>
-                        <td>
-                            <input type="number" name="tarif[prix_base]" step="0.01" min="0" value="<?php echo esc_attr($get_tarif_value('prix_base')); ?>" class="regular-text">
-                            <span class="description">CHF - Montant fixe de départ</span>
-                        </td>
+                        <th><label>Prix de base (CHF)</label></th>
+                        <td><input type="number" name="tarif[prix_base]" value="<?php echo $get_tarif_value('prix_base'); ?>" step="0.01" class="regular-text"></td>
                     </tr>
                     <tr>
-                        <th><label>Prix par kilomètre</label></th>
-                        <td>
-                            <input type="number" name="tarif[prix_km]" step="0.01" min="0" value="<?php echo esc_attr($get_tarif_value('prix_km')); ?>" class="regular-text">
-                            <span class="description">CHF/km</span>
-                        </td>
+                        <th><label>Prix par kilometre (CHF/km)</label></th>
+                        <td><input type="number" name="tarif[prix_km]" value="<?php echo $get_tarif_value('prix_km'); ?>" step="0.01" class="regular-text"></td>
                     </tr>
                     <tr>
-                        <th><label>Prix par m³</label></th>
-                        <td>
-                            <input type="number" name="tarif[prix_m3]" step="0.01" min="0" value="<?php echo esc_attr($get_tarif_value('prix_m3')); ?>" class="regular-text">
-                            <span class="description">CHF/m³</span>
-                        </td>
+                        <th><label>Prix par m³ (CHF/m³)</label></th>
+                        <td><input type="number" name="tarif[prix_m3]" value="<?php echo $get_tarif_value('prix_m3'); ?>" step="0.01" class="regular-text"></td>
                     </tr>
                     <tr>
-                        <th><label>Prix étage sans ascenseur</label></th>
-                        <td>
-                            <input type="number" name="tarif[prix_etage_sans_ascenseur]" step="0.01" min="0" value="<?php echo esc_attr($get_tarif_value('prix_etage_sans_ascenseur')); ?>" class="regular-text">
-                            <span class="description">CHF/étage</span>
-                        </td>
+                        <th><label>Prix etage sans ascenseur (CHF/etage)</label></th>
+                        <td><input type="number" name="tarif[prix_etage]" value="<?php echo $get_tarif_value('prix_etage'); ?>" step="0.01" class="regular-text"></td>
+                    </tr>
+                    <tr>
+                        <th><label>Prix emballage carton (CHF/carton)</label></th>
+                        <td><input type="number" name="tarif[prix_emballage_carton]" value="<?php echo $get_tarif_value('prix_emballage_carton'); ?>" step="0.01" class="regular-text"></td>
+                    </tr>
+                    <tr>
+                        <th><label>Prix fourniture carton (CHF/carton)</label></th>
+                        <td><input type="number" name="tarif[prix_fourniture_carton]" value="<?php echo $get_tarif_value('prix_fourniture_carton'); ?>" step="0.01" class="regular-text"></td>
+                    </tr>
+                    <tr>
+                        <th><label>Majoration weekend (%)</label></th>
+                        <td><input type="number" name="tarif[majoration_weekend]" value="<?php echo $get_tarif_value('majoration_weekend'); ?>" step="0.01" class="regular-text"></td>
+                    </tr>
+                    <tr>
+                        <th><label>Reduction volume >50m³ (%)</label></th>
+                        <td><input type="number" name="tarif[reduction_volume]" value="<?php echo $get_tarif_value('reduction_volume'); ?>" step="0.01" class="regular-text"></td>
                     </tr>
                 </table>
                 
-                <h2>Déménagement complet</h2>
-                <table class="form-table">
-                    <tr>
-                        <th><label>Prix emballage carton</label></th>
-                        <td>
-                            <input type="number" name="tarif[prix_carton_emballage]" step="0.01" min="0" value="<?php echo esc_attr($get_tarif_value('prix_carton_emballage')); ?>" class="regular-text">
-                            <span class="description">CHF/carton</span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th><label>Prix fourniture carton</label></th>
-                        <td>
-                            <input type="number" name="tarif[prix_fourniture_carton]" step="0.01" min="0" value="<?php echo esc_attr($get_tarif_value('prix_fourniture_carton')); ?>" class="regular-text">
-                            <span class="description">CHF/carton</span>
-                        </td>
-                    </tr>
-                </table>
-                
-                <h2>Majorations et réductions</h2>
-                <table class="form-table">
-                    <tr>
-                        <th><label>Majoration weekend</label></th>
-                        <td>
-                            <input type="number" name="tarif[majoration_weekend]" step="0.01" min="0" value="<?php echo esc_attr($get_tarif_value('majoration_weekend')); ?>" class="regular-text">
-                            <span class="description">% - Samedi et dimanche</span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th><label>Réduction volume</label></th>
-                        <td>
-                            <input type="number" name="tarif[reduction_volume]" step="0.01" min="0" value="<?php echo esc_attr($get_tarif_value('reduction_volume')); ?>" class="regular-text">
-                            <span class="description">% - Si volume > 50m³</span>
-                        </td>
-                    </tr>
-                </table>
-                
-                <p class="submit">
-                    <input type="submit" name="novalia_update_tarifs" class="button button-primary" value="Enregistrer les tarifs">
+                <p>
+                    <input type="submit" name="novalia_update_tarifs" class="button button-primary button-large" value="Enregistrer les tarifs">
                 </p>
             </form>
         </div>
@@ -458,7 +471,7 @@ class Novalia_Admin {
             
             <div class="novalia-stats-cards">
                 <div class="stat-card">
-                    <h3>Total Devis</h3>
+                    <h3>Total devis</h3>
                     <p class="stat-number"><?php echo $stats['total']; ?></p>
                 </div>
                 <div class="stat-card orange">
@@ -466,16 +479,16 @@ class Novalia_Admin {
                     <p class="stat-number"><?php echo $stats['en_attente']; ?></p>
                 </div>
                 <div class="stat-card green">
-                    <h3>Acceptés</h3>
+                    <h3>Acceptes</h3>
                     <p class="stat-number"><?php echo $stats['accepte']; ?></p>
                 </div>
-                <div class="stat-card">
-                    <h3>Volume Total</h3>
+                <div class="stat-card blue">
+                    <h3>Volume total</h3>
                     <p class="stat-number"><?php echo number_format($stats['volume_total'], 2); ?> m³</p>
                 </div>
                 <div class="stat-card turquoise">
-                    <h3>Montant Accepté</h3>
-                    <p class="stat-number"><?php echo Novalia_Tarifs::format_prix($stats['montant_total'] ?: 0); ?></p>
+                    <h3>Montant total accepte</h3>
+                    <p class="stat-number"><?php echo number_format($stats['montant_total'] ?: 0); ?> CHF</p>
                 </div>
             </div>
             
@@ -483,9 +496,9 @@ class Novalia_Admin {
             <table class="wp-list-table widefat fixed striped">
                 <thead>
                     <tr>
-                        <th>Numéro</th>
+                        <th>Numero</th>
                         <th>Client</th>
-                        <th>Date déménagement</th>
+                        <th>Date demenagement</th>
                         <th>Volume</th>
                         <th>Prix</th>
                         <th>Statut</th>

@@ -7,7 +7,7 @@ if (!defined('ABSPATH')) {
 class Novalia_Email {
     
     public static function send_devis($devis_id) {
-        error_log('NOVALIA EMAIL: Début send_devis ID=' . $devis_id);
+        error_log('NOVALIA EMAIL: Debut send_devis ID=' . $devis_id);
         
         $devis = Novalia_Devis::get_devis($devis_id);
         
@@ -16,47 +16,57 @@ class Novalia_Email {
             return false;
         }
         
-        error_log('NOVALIA EMAIL: Devis trouvé - ' . $devis->numero_devis . ' - Type: ' . $devis->type_demenagement);
+        error_log('NOVALIA EMAIL: Devis trouve - ' . $devis->numero_devis . ' - Type: ' . $devis->type_demenagement);
         
-        // Génération des PDFs selon le type de déménagement choisi
         $pdf_standard = null;
         $pdf_complet = null;
         
         try {
+            error_log('NOVALIA EMAIL: Creation instance unique PDF generator');
+            $pdf_generator = new Novalia_PDF($devis_id);
+            
             if ($devis->type_demenagement === 'complet') {
-                // Si complet : envoyer les DEUX devis
-                error_log('NOVALIA EMAIL: Type COMPLET - Génération des 2 PDFs');
+                error_log('NOVALIA EMAIL: Type COMPLET - Generation des 2 PDFs');
                 
-                $pdf_generator_standard = new Novalia_PDF($devis_id);
-                $pdf_standard = $pdf_generator_standard->generate_pdf_standard();
-                unset($pdf_generator_standard);
+                $pdf_standard = $pdf_generator->generate_pdf_standard();
+                error_log('NOVALIA EMAIL: PDF standard genere');
                 
-                $pdf_generator_complet = new Novalia_PDF($devis_id);
-                $pdf_complet = $pdf_generator_complet->generate_pdf_complet();
-                unset($pdf_generator_complet);
+                $pdf_complet = $pdf_generator->generate_pdf_complet();
+                error_log('NOVALIA EMAIL: PDF complet genere');
                 
             } else {
-                // Si standard : envoyer SEULEMENT le devis standard
-                error_log('NOVALIA EMAIL: Type STANDARD - Génération d\'un seul PDF');
+                error_log('NOVALIA EMAIL: Type STANDARD - Generation d\'un seul PDF');
                 
-                $pdf_generator_standard = new Novalia_PDF($devis_id);
-                $pdf_standard = $pdf_generator_standard->generate_pdf_standard();
-                unset($pdf_generator_standard);
+                $pdf_standard = $pdf_generator->generate_pdf_standard();
+                error_log('NOVALIA EMAIL: PDF standard genere');
             }
             
-            error_log('NOVALIA EMAIL: PDFs générés avec succès');
+            unset($pdf_generator);
+            error_log('NOVALIA EMAIL: Instance PDF generator liberee');
+            
+            error_log('NOVALIA EMAIL: PDFs devis generes avec succes');
         } catch (Exception $e) {
-            error_log('NOVALIA EMAIL: ERREUR génération PDF - ' . $e->getMessage());
+            error_log('NOVALIA EMAIL: ERREUR generation PDF devis - ' . $e->getMessage());
+            error_log('NOVALIA EMAIL: Stack trace: ' . $e->getTraceAsString());
             return false;
         }
         
-        // Préparation de l'email avec template HTML
+        try {
+            error_log('NOVALIA EMAIL: Debut generation fiche technique');
+            $fiche_generator = new Novalia_Fiche_Technique($devis_id);
+            $fiche_relative_path = $fiche_generator->generate_and_save();
+            unset($fiche_generator);
+            error_log('NOVALIA EMAIL: Fiche technique sauvegardee: ' . $fiche_relative_path);
+        } catch (Exception $e) {
+            error_log('NOVALIA EMAIL: ERREUR generation fiche technique (non bloquante) - ' . $e->getMessage());
+            error_log('NOVALIA EMAIL: Stack trace fiche: ' . $e->getTraceAsString());
+        }
+        
         $to = $devis->email_client;
-        $subject = 'Votre devis de déménagement - ' . $devis->numero_devis;
+        $subject = 'Votre devis de demenagement - ' . $devis->numero_devis;
         $message = self::get_email_template_html($devis);
         $headers = self::get_email_headers_html();
         
-        // Attachments - selon le type
         $attachments = array();
         
         $upload_dir = wp_upload_dir();
@@ -66,157 +76,192 @@ class Novalia_Email {
             wp_mkdir_p($temp_dir);
         }
         
-        // Toujours créer le PDF standard
         $filename_standard = $temp_dir . 'devis_standard_' . $devis->numero_devis . '.pdf';
         file_put_contents($filename_standard, $pdf_standard);
         $attachments[] = $filename_standard;
         
-        // Ajouter le PDF complet uniquement si type complet
         if ($devis->type_demenagement === 'complet') {
             $filename_complet = $temp_dir . 'devis_complet_' . $devis->numero_devis . '.pdf';
             file_put_contents($filename_complet, $pdf_complet);
             $attachments[] = $filename_complet;
         }
         
-        error_log('NOVALIA EMAIL: ' . count($attachments) . ' fichier(s) PDF créé(s) dans ' . $temp_dir);
+        error_log('NOVALIA EMAIL: ' . count($attachments) . ' fichier(s) PDF cree(s) dans ' . $temp_dir);
         
-        // Envoi de l'email
-        error_log('NOVALIA EMAIL: Envoi email à ' . $to);
+        error_log('NOVALIA EMAIL: Envoi email a ' . $to);
         $sent = wp_mail($to, $subject, $message, $headers, $attachments);
-        error_log('NOVALIA EMAIL: Email principal envoyé=' . ($sent ? 'OK' : 'ECHEC'));
+        error_log('NOVALIA EMAIL: Email principal envoye=' . ($sent ? 'OK' : 'ECHEC'));
         
-        // Copie à l'entreprise
         if ($sent) {
             $admin_email = get_option('admin_email');
             $subject_admin = 'Nouveau devis - ' . $devis->numero_devis;
             $message_admin = self::get_admin_email_template($devis);
             
             wp_mail($admin_email, $subject_admin, $message_admin, $headers, $attachments);
-            error_log('NOVALIA EMAIL: Email admin envoyé');
+            error_log('NOVALIA EMAIL: Email admin envoye');
         }
         
-        // Nettoyage des fichiers temporaires
         foreach ($attachments as $file) {
             @unlink($file);
         }
-        error_log('NOVALIA EMAIL: Fichiers temp supprimés');
+        error_log('NOVALIA EMAIL: Fichiers temp supprimes');
         
-        error_log('NOVALIA EMAIL: Fin send_devis - Résultat=' . ($sent ? 'SUCCESS' : 'ECHEC'));
+        error_log('NOVALIA EMAIL: Fin send_devis - Resultat=' . ($sent ? 'SUCCESS' : 'ECHEC'));
         return $sent;
     }
     
     private static function get_email_template_html($devis) {
-        // Charger le template HTML
-        $template_path = NOVALIA_PLUGIN_DIR . 'templates/email-template.html';
-        
-        if (!file_exists($template_path)) {
-            error_log('NOVALIA EMAIL: Template HTML introuvable, utilisation template texte');
-            error_log('NOVALIA EMAIL: Chemin cherche: ' . $template_path);
-            return self::get_email_template_text($devis);
-        }
-        
-        $template = file_get_contents($template_path);
-        
-        // Remplacer les variables
-        $replacements = array(
-            '{{NOM_CLIENT}}' => $devis->nom_client,
-            '{{NUMERO_DEVIS}}' => $devis->numero_devis,
-            '{{DATE_DEMENAGEMENT}}' => Novalia_Devis::format_date($devis->date_demenagement),
-        );
-        
-        // Adapter le message selon le type
-        if ($devis->type_demenagement === 'standard') {
-            $template = str_replace(
-                '<p>Vous trouverez ci-joint vos deux propositions de devis en PDF :</p>',
-                '<p>Vous trouverez ci-joint votre devis de déménagement standard en PDF :</p>',
-                $template
-            );
-            // Cacher le bouton "Déménagement Complet"
-            $template = str_replace(
-                '<a href="#" class="pdf-button complet">Déménagement Complet</a>',
-                '',
-                $template
-            );
-        }
-        
-        $message = str_replace(array_keys($replacements), array_values($replacements), $template);
-        
-        return $message;
-    }
-    
-    private static function get_email_template_text($devis) {
-        // Fallback en texte brut
-        $message = "Bonjour " . $devis->nom_client . ",\n\n";
-        $message .= "Merci pour votre demande de devis de déménagement.\n\n";
-        
-        if ($devis->type_demenagement === 'complet') {
-            $message .= "Vous trouverez ci-joint deux devis :\n";
-            $message .= "- Déménagement standard\n";
-            $message .= "- Déménagement complet (avec emballage)\n\n";
-        } else {
-            $message .= "Vous trouverez ci-joint votre devis de déménagement standard.\n\n";
-        }
-        
-        $message .= "DÉTAILS DE VOTRE DÉMÉNAGEMENT :\n";
-        $message .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
-        $message .= "Numéro de devis : " . $devis->numero_devis . "\n";
-        $message .= "Date : " . Novalia_Devis::format_date($devis->date_demenagement) . "\n";
-        $message .= "Départ : " . $devis->adresse_depart . "\n";
-        $message .= "Arrivée : " . $devis->adresse_arrivee . "\n";
-        $message .= "Distance : " . number_format($devis->distance, 2) . " km\n";
-        $message .= "Volume total : " . number_format($devis->volume_total, 2) . " m³\n\n";
-        
-        if ($devis->type_demenagement === 'complet') {
-            $message .= "TARIFS :\n";
-            $message .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
-            $message .= "Déménagement standard : " . Novalia_Tarifs::format_prix($devis->prix_standard) . "\n";
-            $message .= "Déménagement complet : " . Novalia_Tarifs::format_prix($devis->prix_complet) . "\n\n";
-        } else {
-            $message .= "TARIF :\n";
-            $message .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
-            $message .= "Déménagement standard : " . Novalia_Tarifs::format_prix($devis->prix_standard) . "\n\n";
-        }
-        
-        $message .= "⚠️ IMPORTANT : Ce" . ($devis->type_demenagement === 'complet' ? "s prix sont des estimations" : " prix est une estimation") . " basée sur les informations fournies.\n";
-        $message .= "Une visite sur place sera nécessaire pour établir un devis définitif.\n\n";
-        $message .= "Notre équipe vous contactera rapidement pour planifier cette visite.\n\n";
-        $message .= "Cordialement,\n";
-        $message .= "L'équipe Novalia Group\n\n";
-        $message .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
-        $message .= "Novalia Group\n";
-        $message .= "Email : info@novaliagroup.ch\n";
-        $message .= "Web : www.novaliagroup.ch\n";
-        
-        return $message;
+        ob_start();
+        ?>
+        <!DOCTYPE html>
+        <html lang="fr">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Votre devis Novalia Group</title>
+            <style>
+                body {
+                    margin: 0;
+                    padding: 0;
+                    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+                    background-color: #f4f4f4;
+                }
+                .container {
+                    max-width: 600px;
+                    margin: 0 auto;
+                    background-color: #ffffff;
+                }
+                .header {
+                    background-color: #1A2332;
+                    padding: 30px 20px;
+                    text-align: center;
+                }
+                .header h1 {
+                    color: #ffffff;
+                    margin: 0;
+                    font-size: 28px;
+                    font-weight: 300;
+                }
+                .logo {
+                    color: #2BBBAD;
+                    font-weight: bold;
+                    font-size: 24px;
+                    margin-bottom: 10px;
+                }
+                .content {
+                    padding: 40px 30px;
+                }
+                .greeting {
+                    font-size: 16px;
+                    color: #333333;
+                    margin-bottom: 20px;
+                }
+                .devis-box {
+                    background-color: #f8f9fa;
+                    border-left: 4px solid #2BBBAD;
+                    padding: 20px;
+                    margin: 30px 0;
+                }
+                .devis-box h2 {
+                    color: #1A2332;
+                    margin-top: 0;
+                    font-size: 20px;
+                }
+                .devis-info {
+                    margin: 15px 0;
+                }
+                .devis-info strong {
+                    color: #1A2332;
+                }
+                .warning-box {
+                    background-color: #fff3cd;
+                    border-left: 4px solid #ffa500;
+                    padding: 15px;
+                    margin: 20px 0;
+                }
+                .warning-box strong {
+                    color: #856404;
+                }
+                .footer {
+                    background-color: #1A2332;
+                    color: #ffffff;
+                    padding: 20px 30px;
+                    text-align: center;
+                    font-size: 14px;
+                }
+                .footer a {
+                    color: #2BBBAD;
+                    text-decoration: none;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <div class="logo">Novalia Group</div>
+                    <h1>Votre devis de demenagement</h1>
+                </div>
+                
+                <div class="content">
+                    <p class="greeting">Bonjour <strong><?php echo esc_html($devis->nom_client); ?></strong>,</p>
+                    
+                    <p>Nous vous remercions pour votre demande de devis.</p>
+                    
+                    <div class="devis-box">
+                        <h2>Votre devis N° <?php echo esc_html($devis->numero_devis); ?></h2>
+                        
+                        <div class="devis-info">
+                            <strong>Date du demenagement :</strong> <?php echo date('d/m/Y', strtotime($devis->date_demenagement)); ?>
+                        </div>
+                        
+                        <p>Vous trouverez ci-joint votre devis au format PDF.</p>
+                    </div>
+                    
+                    <div class="warning-box">
+                        <strong>⚠ Important :</strong> Ce devis est une estimation basee sur les informations que vous nous avez transmises. Une visite technique sera necessaire pour etablir un devis definitif.
+                    </div>
+                    
+                    <p>Notre equipe vous contactera dans les plus brefs delais pour convenir d'un rendez-vous.</p>
+                    
+                    <p style="margin-top: 30px;">Cordialement,</p>
+                    <p><strong>L'equipe Novalia Group</strong></p>
+                </div>
+                
+                <div class="footer">
+                    <p>Novalia Group - Votre confiance, notre energie</p>
+                    <p>
+                        Email : <a href="mailto:info@novaliagroup.ch">info@novaliagroup.ch</a><br>
+                        Web : <a href="https://novaliagroup.ch">www.novaliagroup.ch</a>
+                    </p>
+                </div>
+            </div>
+        </body>
+        </html>
+        <?php
+        return ob_get_clean();
     }
     
     private static function get_admin_email_template($devis) {
-        $message = "NOUVEAU DEVIS REÇU\n\n";
-        $message .= "Numéro : " . $devis->numero_devis . "\n";
-        $message .= "Date de création : " . date('d/m/Y H:i') . "\n";
-        $message .= "Type demandé : " . strtoupper($devis->type_demenagement) . "\n\n";
-        $message .= "CLIENT :\n";
-        $message .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+        $message = "Un nouveau devis a ete genere.\n\n";
+        $message .= "=== INFORMATIONS CLIENT ===\n";
         $message .= "Nom : " . $devis->nom_client . "\n";
         $message .= "Email : " . $devis->email_client . "\n";
-        $message .= "Téléphone : " . $devis->telephone_client . "\n\n";
-        $message .= "DÉMÉNAGEMENT :\n";
-        $message .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
-        $message .= "Date : " . Novalia_Devis::format_date($devis->date_demenagement) . "\n";
-        $message .= "Départ : " . $devis->adresse_depart . "\n";
-        $message .= "Arrivée : " . $devis->adresse_arrivee . "\n";
-        $message .= "Distance : " . number_format($devis->distance, 2) . " km\n";
-        $message .= "Volume total : " . number_format($devis->volume_total, 2) . " m³\n\n";
-        $message .= "TARIFS :\n";
-        $message .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
-        $message .= "Standard : " . Novalia_Tarifs::format_prix($devis->prix_standard) . "\n";
-        $message .= "Complet : " . Novalia_Tarifs::format_prix($devis->prix_complet) . "\n\n";
+        $message .= "Telephone : " . $devis->telephone_client . "\n\n";
         
-        if ($devis->type_demenagement === 'complet') {
-            $message .= "Les 2 PDF sont joints à cet email.\n";
-        } else {
-            $message .= "Le PDF standard est joint à cet email.\n";
-        }
+        $message .= "=== DETAILS DEMENAGEMENT ===\n";
+        $message .= "Numero devis : " . $devis->numero_devis . "\n";
+        $message .= "Type : " . strtoupper($devis->type_demenagement) . "\n";
+        $message .= "Date : " . date('d/m/Y', strtotime($devis->date_demenagement)) . "\n";
+        $message .= "De : " . $devis->adresse_depart . "\n";
+        $message .= "Vers : " . $devis->adresse_arrivee . "\n";
+        $message .= "Distance : " . $devis->distance . " km\n";
+        $message .= "Volume : " . $devis->volume_total . " m3\n\n";
+        
+        $message .= "Prix standard : " . number_format($devis->prix_standard, 2) . " CHF\n";
+        $message .= "Prix complet : " . number_format($devis->prix_complet, 2) . " CHF\n\n";
+        
+        $message .= "La fiche technique est disponible dans l'administration WordPress.\n";
+        $message .= "Accedez a l'admin pour telecharger la fiche technique.";
         
         return $message;
     }
@@ -225,106 +270,8 @@ class Novalia_Email {
         $headers = array();
         $headers[] = 'Content-Type: text/html; charset=UTF-8';
         $headers[] = 'From: Novalia Group <info@novaliagroup.ch>';
+        $headers[] = 'Reply-To: info@novaliagroup.ch';
         
         return $headers;
-    }
-    
-    public static function send_notification_admin($devis_id, $action) {
-        $devis = Novalia_Devis::get_devis($devis_id);
-        
-        if (!$devis) {
-            return false;
-        }
-        
-        $admin_email = get_option('admin_email');
-        $subject = 'Action sur devis - ' . $devis->numero_devis;
-        
-        $message = "Une action a été effectuée sur un devis.\n\n";
-        $message .= "Action : " . $action . "\n";
-        $message .= "Devis : " . $devis->numero_devis . "\n";
-        $message .= "Client : " . $devis->nom_client . "\n";
-        $message .= "Date : " . date('d/m/Y H:i') . "\n";
-        
-        $headers = array('Content-Type: text/plain; charset=UTF-8');
-        
-        return wp_mail($admin_email, $subject, $message, $headers);
-    }
-    
-    /**
-     * Envoyer notification à l'entreprise avec fiche technique
-     */
-    public static function send_entreprise_notification($devis_id) {
-        error_log('NOVALIA EMAIL: Envoi notification entreprise ID=' . $devis_id);
-        
-        $devis = Novalia_Devis::get_devis($devis_id);
-        
-        if (!$devis) {
-            error_log('NOVALIA EMAIL: Devis introuvable pour notification');
-            return false;
-        }
-        
-        // Email de l'entreprise
-        $admin_email = get_option('admin_email');
-        $entreprise_email = get_option('novalia_email_entreprise', 'info@novaliagroup.ch');
-        
-        // Sujet
-        $subject = '[NOUVEAU DEVIS] ' . $devis->numero_devis . ' - ' . $devis->nom_client;
-        
-        // Message
-        $message = "Un nouveau devis a été généré sur votre site.\n\n";
-        $message .= "=== INFORMATIONS CLIENT ===\n";
-        $message .= "Nom : " . $devis->nom_client . "\n";
-        $message .= "Email : " . $devis->email_client . "\n";
-        $message .= "Téléphone : " . $devis->telephone_client . "\n\n";
-        
-        $message .= "=== DÉTAILS DÉMÉNAGEMENT ===\n";
-        $message .= "Numéro devis : " . $devis->numero_devis . "\n";
-        $message .= "Type : " . strtoupper($devis->type_demenagement) . "\n";
-        $message .= "Date : " . date('d/m/Y', strtotime($devis->date_demenagement)) . "\n";
-        $message .= "De : " . $devis->adresse_depart . "\n";
-        $message .= "Vers : " . $devis->adresse_arrivee . "\n";
-        $message .= "Distance : " . $devis->distance . " km\n";
-        $message .= "Volume : " . $devis->volume_total . " m³\n\n";
-        
-        $message .= "Prix " . $devis->type_demenagement . " : " . 
-                   ($devis->type_demenagement === 'complet' ? $devis->prix_complet : $devis->prix_standard) . " CHF\n\n";
-        
-        $message .= "La fiche technique pour vos employés est en pièce jointe.\n\n";
-        $message .= "Cordialement,\n";
-        $message .= "Système Novalia";
-        
-        // Génération de la fiche technique
-        require_once(NOVALIA_PLUGIN_DIR . 'class-novalia-pdf.php');
-        
-        try {
-            $pdf_fiche = new Novalia_PDF($devis_id);
-            $fiche_path = $pdf_fiche->generate_fiche_technique();
-            
-            if (!$fiche_path || !file_exists($fiche_path)) {
-                error_log('NOVALIA EMAIL: Erreur génération fiche technique');
-                return false;
-            }
-            
-            error_log('NOVALIA EMAIL: Fiche technique générée: ' . $fiche_path);
-            
-            // Envoi email avec pièce jointe
-            $headers = array(
-                'Content-Type: text/plain; charset=UTF-8',
-                'From: Novalia System <' . $admin_email . '>'
-            );
-            
-            $sent = wp_mail($entreprise_email, $subject, $message, $headers, array($fiche_path));
-            
-            error_log('NOVALIA EMAIL: Notification entreprise ' . ($sent ? 'envoyée' : 'ÉCHOUÉE'));
-            
-            // Nettoyage
-            @unlink($fiche_path);
-            
-            return $sent;
-            
-        } catch (Exception $e) {
-            error_log('NOVALIA EMAIL: Erreur notification entreprise: ' . $e->getMessage());
-            return false;
-        }
     }
 }

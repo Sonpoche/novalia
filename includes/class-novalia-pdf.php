@@ -21,79 +21,115 @@ class Novalia_PDF {
             throw new Exception('Devis introuvable (ID: ' . $devis_id . ')');
         }
         
-        error_log('NOVALIA PDF: Devis chargé - ' . $this->devis->numero_devis);
+        error_log('NOVALIA PDF: Devis charge - ' . $this->devis->numero_devis);
         $this->init_pdf();
-        error_log('NOVALIA PDF: PDF initialisé');
+        error_log('NOVALIA PDF: PDF initialise');
     }
     
     private function init_pdf() {
-        // Créer l'instance TCPDF
         $this->pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
         
-        // Désactiver les en-têtes et pieds de page automatiques
         $this->pdf->setPrintHeader(false);
         $this->pdf->setPrintFooter(false);
         
-        // Métadonnées du document
         $this->pdf->SetCreator('Novalia Group');
         $this->pdf->SetAuthor('Novalia Group');
         $this->pdf->SetTitle('Devis Demenagement - ' . $this->devis->numero_devis);
         $this->pdf->SetSubject('Devis de demenagement');
         
-        // Marges et mise en page
         $this->pdf->SetMargins(15, 15, 15);
         $this->pdf->SetAutoPageBreak(true, 15);
         
-        // Police par défaut
         $this->pdf->SetFont('helvetica', '', 10);
     }
     
     public function generate_pdf_standard() {
-        error_log('NOVALIA PDF: Génération standard avec template');
+        error_log('NOVALIA PDF: Generation standard avec template');
+        $this->init_pdf();
         return $this->generate_with_template('standard');
     }
     
     public function generate_pdf_complet() {
-        error_log('NOVALIA PDF: Génération complet avec template');
+        error_log('NOVALIA PDF: Generation complet avec template');
+        $this->init_pdf();
         return $this->generate_with_template('complet');
     }
     
     private function generate_with_template($type) {
-        // Charger le template
         $template_path = NOVALIA_PLUGIN_DIR . 'templates/pdf-template.php';
         
         if (!file_exists($template_path)) {
-            error_log('NOVALIA PDF: Template introuvable, utilisation méthode standard');
-            error_log('NOVALIA PDF: Chemin cherché: ' . $template_path);
+            error_log('NOVALIA PDF: Template introuvable: ' . $template_path);
             return $this->generate_without_template($type);
         }
         
-        // Ajouter la première page
         $this->pdf->AddPage();
         
-        // Variables disponibles pour le template
         $devis = $this->devis;
         $pdf = $this->pdf;
         
-        // Inclure le template
         ob_start();
         include $template_path;
         ob_end_clean();
         
-        // Retourner le PDF
         return $this->pdf->Output('', 'S');
     }
     
-    private function generate_without_template($type) {
-        // Fallback sans template (méthode actuelle)
+    public function generate_and_save_fiche_technique() {
+        error_log('NOVALIA PDF: Generation fiche technique ID=' . $this->devis->id);
+        
+        $this->init_pdf();
+        
+        $template_path = NOVALIA_PLUGIN_DIR . 'templates/fiche-technique-template.php';
+        
+        if (!file_exists($template_path)) {
+            error_log('NOVALIA PDF: Template fiche technique introuvable: ' . $template_path);
+            throw new Exception('Template fiche technique introuvable');
+        }
+        
         $this->pdf->AddPage();
         
-        // En-tête entreprise
+        $devis = $this->devis;
+        $type = $devis->type_demenagement;
+        $pdf = $this->pdf;
+        
+        ob_start();
+        include $template_path;
+        ob_end_clean();
+        
+        $upload_dir = wp_upload_dir();
+        $fiches_dir = $upload_dir['basedir'] . '/novalia-fiches-techniques/';
+        
+        if (!file_exists($fiches_dir)) {
+            wp_mkdir_p($fiches_dir);
+        }
+        
+        $filename = 'fiche_' . $devis->numero_devis . '_' . time() . '.pdf';
+        $file_path = $fiches_dir . $filename;
+        
+        try {
+            $this->pdf->Output($file_path, 'F');
+            error_log('NOVALIA PDF: Fiche technique generee: ' . $file_path);
+            
+            $relative_path = '/novalia-fiches-techniques/' . $filename;
+            
+            Novalia_Database::update_devis_fiche_technique($this->devis->id, $relative_path);
+            
+            return $relative_path;
+            
+        } catch (Exception $e) {
+            error_log('NOVALIA PDF: Erreur generation fiche: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+    
+    private function generate_without_template($type) {
+        $this->pdf->AddPage();
+        
         $this->add_header();
         
         $this->pdf->Ln(10);
         
-        // Titre devis
         $this->pdf->SetFont('helvetica', 'B', 20);
         $this->pdf->SetTextColor(26, 35, 50);
         $this->pdf->Cell(0, 10, 'DEVIS DE DEMENAGEMENT', 0, 1, 'C');
@@ -104,17 +140,14 @@ class Novalia_PDF {
         
         $this->pdf->Ln(5);
         
-        // Informations client
         $this->add_client_info();
         
         $this->pdf->Ln(5);
         
-        // Trajet
         $this->add_trajet_info();
         
         $this->pdf->Ln(5);
         
-        // Date déménagement
         $this->pdf->SetFont('helvetica', 'B', 11);
         $this->pdf->SetTextColor(26, 35, 50);
         $this->pdf->Cell(50, 7, 'Date du demenagement:', 0, 0, 'L');
@@ -123,7 +156,6 @@ class Novalia_PDF {
         
         $this->pdf->Ln(5);
         
-        // Volume total
         $this->pdf->SetFont('helvetica', 'B', 11);
         $this->pdf->Cell(50, 7, 'Volume total:', 0, 0, 'L');
         $this->pdf->SetFont('helvetica', '', 11);
@@ -131,15 +163,12 @@ class Novalia_PDF {
         
         $this->pdf->Ln(10);
         
-        // Prix
         $this->add_prix_box($type);
         
         $this->pdf->Ln(10);
         
-        // Mention estimation
         $this->add_estimation_notice();
         
-        // Page 2 - Objets
         $this->add_page_two();
         
         return $this->pdf->Output('', 'S');
@@ -148,14 +177,12 @@ class Novalia_PDF {
     private function add_page_two() {
         $this->pdf->AddPage();
         
-        // Titre
         $this->pdf->SetFont('helvetica', 'B', 16);
         $this->pdf->SetTextColor(26, 35, 50);
         $this->pdf->Cell(0, 10, 'RECAPITULATIF DES OBJETS', 0, 1, 'C');
         
         $this->pdf->Ln(5);
         
-        // Liste des objets par catégorie
         if (isset($this->devis->items_by_category)) {
             foreach ($this->devis->items_by_category as $categorie => $items) {
                 $this->add_category_items($categorie, $items);
@@ -164,7 +191,6 @@ class Novalia_PDF {
     }
     
     private function add_header() {
-        // Logo et infos entreprise
         $this->pdf->SetFont('helvetica', 'B', 16);
         $this->pdf->SetTextColor(26, 35, 50);
         $this->pdf->Cell(0, 8, 'NOVALIA GROUP', 0, 1, 'L');
@@ -174,7 +200,6 @@ class Novalia_PDF {
         $this->pdf->Cell(0, 5, 'info@novaliagroup.ch', 0, 1, 'L');
         $this->pdf->Cell(0, 5, 'www.novaliagroup.ch', 0, 1, 'L');
         
-        // Ligne de séparation
         $this->pdf->Ln(3);
         $this->pdf->SetDrawColor(43, 187, 173);
         $this->pdf->SetLineWidth(0.5);
@@ -278,13 +303,11 @@ class Novalia_PDF {
     }
     
     private function add_category_items($categorie, $items) {
-        // En-tête catégorie
         $this->pdf->SetFillColor(26, 35, 50);
         $this->pdf->SetTextColor(255, 255, 255);
         $this->pdf->SetFont('helvetica', 'B', 11);
         $this->pdf->Cell(0, 8, strtoupper($categorie), 0, 1, 'L', true);
         
-        // Tableau items
         $this->pdf->SetFont('helvetica', '', 9);
         $this->pdf->SetTextColor(60, 60, 60);
         
@@ -302,7 +325,6 @@ class Novalia_PDF {
             $this->pdf->Cell(25, 6, number_format($volume_item, 3) . ' m3', 0, 1, 'R', true);
         }
         
-        // Total catégorie
         $this->pdf->SetFont('helvetica', 'B', 9);
         $this->pdf->SetFillColor(43, 187, 173);
         $this->pdf->SetTextColor(255, 255, 255);
@@ -320,43 +342,5 @@ class Novalia_PDF {
     public function save_pdf_complet($filename) {
         $this->generate_pdf_complet();
         return $this->pdf->Output($filename, 'F');
-    }
-    
-    /**
-     * Générer la fiche technique pour les employés
-     */
-    public function generate_fiche_technique() {
-        error_log('NOVALIA PDF: Génération fiche technique ID=' . $this->devis_id);
-        
-        // Nouveau PDF
-        $this->init_pdf();
-        
-        // Charger le template fiche technique
-        $template_path = NOVALIA_PLUGIN_DIR . 'templates/fiche-technique-template.php';
-        
-        if (!file_exists($template_path)) {
-            error_log('NOVALIA PDF: Template fiche technique introuvable: ' . $template_path);
-            throw new Exception('Template fiche technique introuvable');
-        }
-        
-        $devis = $this->devis;
-        $type = $devis->type_demenagement;
-        $pdf = $this->pdf;
-        
-        // Charger le template
-        require($template_path);
-        
-        // Sauvegarder temporairement
-        $upload_dir = wp_upload_dir();
-        $temp_file = $upload_dir['basedir'] . '/novalia_fiche_' . $devis->numero_devis . '_' . time() . '.pdf';
-        
-        try {
-            $this->pdf->Output($temp_file, 'F');
-            error_log('NOVALIA PDF: Fiche technique générée: ' . $temp_file);
-            return $temp_file;
-        } catch (Exception $e) {
-            error_log('NOVALIA PDF: Erreur génération fiche: ' . $e->getMessage());
-            throw $e;
-        }
     }
 }

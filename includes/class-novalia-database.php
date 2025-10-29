@@ -45,6 +45,12 @@ class Novalia_Database {
             telephone_client varchar(50),
             adresse_depart text NOT NULL,
             adresse_arrivee text NOT NULL,
+            type_logement_depart varchar(50),
+            type_logement_arrivee varchar(50),
+            etages_depart int(11) DEFAULT 0,
+            etages_arrivee int(11) DEFAULT 0,
+            ascenseur_depart tinyint(1) DEFAULT 0,
+            ascenseur_arrivee tinyint(1) DEFAULT 0,
             distance decimal(10,2) NOT NULL,
             date_demenagement date NOT NULL,
             volume_total decimal(10,3) NOT NULL,
@@ -52,6 +58,7 @@ class Novalia_Database {
             nombre_cartons int(11) DEFAULT 0,
             prix_standard decimal(10,2) NOT NULL,
             prix_complet decimal(10,2) NOT NULL,
+            fiche_technique_pdf varchar(500),
             statut varchar(20) DEFAULT 'en_attente',
             date_creation datetime DEFAULT CURRENT_TIMESTAMP,
             date_modification datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -211,6 +218,12 @@ class Novalia_Database {
             'telephone_client' => sanitize_text_field($data['telephone_client']),
             'adresse_depart' => sanitize_textarea_field($data['adresse_depart']),
             'adresse_arrivee' => sanitize_textarea_field($data['adresse_arrivee']),
+            'type_logement_depart' => isset($data['type_logement_depart']) ? sanitize_text_field($data['type_logement_depart']) : null,
+            'type_logement_arrivee' => isset($data['type_logement_arrivee']) ? sanitize_text_field($data['type_logement_arrivee']) : null,
+            'etages_depart' => isset($data['etages_depart']) ? intval($data['etages_depart']) : 0,
+            'etages_arrivee' => isset($data['etages_arrivee']) ? intval($data['etages_arrivee']) : 0,
+            'ascenseur_depart' => isset($data['ascenseur_depart']) ? 1 : 0,
+            'ascenseur_arrivee' => isset($data['ascenseur_arrivee']) ? 1 : 0,
             'distance' => floatval($data['distance']),
             'date_demenagement' => sanitize_text_field($data['date_demenagement']),
             'volume_total' => floatval($data['volume_total']),
@@ -222,6 +235,19 @@ class Novalia_Database {
         ));
         
         return $wpdb->insert_id;
+    }
+    
+    public static function update_devis_fiche_technique($devis_id, $pdf_path) {
+        global $wpdb;
+        $table = $wpdb->prefix . 'novalia_devis';
+        
+        return $wpdb->update(
+            $table,
+            array('fiche_technique_pdf' => $pdf_path),
+            array('id' => $devis_id),
+            array('%s'),
+            array('%d')
+        );
     }
     
     public static function insert_devis_items($devis_id, $items) {
@@ -293,6 +319,15 @@ class Novalia_Database {
         global $wpdb;
         $table_devis = $wpdb->prefix . 'novalia_devis';
         $table_items = $wpdb->prefix . 'novalia_devis_items';
+        
+        $devis = self::get_devis($id);
+        if ($devis && !empty($devis->fiche_technique_pdf)) {
+            $upload_dir = wp_upload_dir();
+            $file_path = $upload_dir['basedir'] . $devis->fiche_technique_pdf;
+            if (file_exists($file_path)) {
+                @unlink($file_path);
+            }
+        }
         
         $wpdb->delete($table_items, array('devis_id' => $id));
         return $wpdb->delete($table_devis, array('id' => $id));
