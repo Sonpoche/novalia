@@ -102,7 +102,7 @@ class Novalia_Shortcode {
                             <span class="distance-value" id="distance-display">-</span>
                         </div>
                         
-                        <button type="button" class="novalia-btn novalia-btn-next" id="btn-step-1" disabled>
+                        <button type="button" class="novalia-btn novalia-btn-next novalia-btn-uniform" id="btn-step-1" disabled>
                             Suivant
                         </button>
                     </div>
@@ -126,7 +126,7 @@ class Novalia_Shortcode {
                                         <select id="custom-item-category" class="novalia-input">
                                             <?php echo $this->render_category_options(); ?>
                                         </select>
-                                        <button type="button" id="btn-add-custom" class="novalia-btn novalia-btn-secondary">Ajouter</button>
+                                        <button type="button" id="btn-add-custom" class="novalia-btn novalia-btn-secondary novalia-btn-uniform">Ajouter</button>
                                     </div>
                                 </div>
                             </div>
@@ -149,10 +149,10 @@ class Novalia_Shortcode {
                         </div>
                         
                         <div class="novalia-step-actions">
-                            <button type="button" class="novalia-btn novalia-btn-secondary btn-prev" data-prev="1">
+                            <button type="button" class="novalia-btn novalia-btn-secondary novalia-btn-uniform btn-prev" data-prev="1">
                                 Précédent
                             </button>
-                            <button type="button" class="novalia-btn novalia-btn-next" id="btn-step-2">
+                            <button type="button" class="novalia-btn novalia-btn-next novalia-btn-uniform" id="btn-step-2">
                                 Suivant
                             </button>
                         </div>
@@ -297,10 +297,10 @@ class Novalia_Shortcode {
                         </div>
                         
                         <div class="novalia-step-actions">
-                            <button type="button" class="novalia-btn novalia-btn-secondary btn-prev" data-prev="2">
+                            <button type="button" class="novalia-btn novalia-btn-secondary novalia-btn-uniform btn-prev" data-prev="2">
                                 Précédent
                             </button>
-                            <button type="button" class="novalia-btn novalia-btn-primary" id="btn-submit-devis">
+                            <button type="button" class="novalia-btn novalia-btn-primary novalia-btn-uniform" id="btn-submit-devis">
                                 Recevoir mon devis
                             </button>
                         </div>
@@ -316,10 +316,10 @@ class Novalia_Shortcode {
                             <p class="success-subtitle">Notre équipe vous contactera rapidement pour planifier une visite sur place.</p>
                             
                             <div class="success-actions">
-                                <button class="novalia-btn novalia-btn-secondary" id="btn-refaire-estimation">
+                                <button class="novalia-btn novalia-btn-secondary novalia-btn-uniform" id="btn-refaire-estimation">
                                     Refaire mon estimation
                                 </button>
-                                <a href="<?php echo esc_url(home_url('/')); ?>" class="novalia-btn novalia-btn-primary">
+                                <a href="<?php echo esc_url(home_url('/')); ?>" class="novalia-btn novalia-btn-primary novalia-btn-uniform">
                                     Retour à l'accueil
                                 </a>
                             </div>
@@ -334,10 +334,33 @@ class Novalia_Shortcode {
     
     private function render_categories() {
         $items_by_category = Novalia_Items::get_items_by_category();
+        
+        // Définir l'ordre souhaité des catégories
+        $category_order = array(
+            'Entrée / Couloir',
+            'Salon',
+            'Salle à manger',
+            'Cuisine',
+            'Chambre principale',
+            'Chambre enfant',
+            'Bureau',
+            'Salle de bain',
+            'Cartons',
+            'Cave / Garage',
+            'Extérieur'
+        );
+        
         $output = '';
         $first = true;
         
-        foreach ($items_by_category as $categorie => $items) {
+        // Parcourir les catégories dans l'ordre défini
+        foreach ($category_order as $categorie) {
+            // Vérifier si la catégorie existe dans les items
+            if (!isset($items_by_category[$categorie])) {
+                continue;
+            }
+            
+            $items = $items_by_category[$categorie];
             $open_class = $first ? 'open' : '';
             $first = false;
             
@@ -366,14 +389,57 @@ class Novalia_Shortcode {
             $output .= '</div>';
         }
         
+        // Ajouter les catégories qui ne sont pas dans l'ordre défini (au cas où)
+        foreach ($items_by_category as $categorie => $items) {
+            if (!in_array($categorie, $category_order)) {
+                $output .= '<div class="novalia-category">';
+                $output .= '<div class="category-header">';
+                $output .= '<h3>' . esc_html($categorie) . '</h3>';
+                $output .= '<span class="category-toggle">▼</span>';
+                $output .= '</div>';
+                $output .= '<div class="category-items">';
+                
+                foreach ($items as $item) {
+                    $output .= '<div class="novalia-item" data-item-id="' . $item->id . '" data-volume="' . $item->volume . '" data-category="' . esc_attr($categorie) . '">';
+                    $output .= '<div class="item-info">';
+                    $output .= '<span class="item-name">' . esc_html($item->nom) . '</span>';
+                    $output .= '<span class="item-volume">' . number_format($item->volume, 3) . ' m³</span>';
+                    $output .= '</div>';
+                    $output .= '<div class="item-controls">';
+                    $output .= '<button type="button" class="item-btn item-minus" disabled>-</button>';
+                    $output .= '<span class="item-quantity">0</span>';
+                    $output .= '<button type="button" class="item-btn item-plus">+</button>';
+                    $output .= '</div>';
+                    $output .= '</div>';
+                }
+                
+                $output .= '</div>';
+                $output .= '</div>';
+            }
+        }
+        
         return $output;
     }
     
     private function render_category_options() {
-        $categories = Novalia_Items::get_categories();
+        // Définir l'ordre souhaité des catégories
+        $category_order = array(
+            'Entrée / Couloir',
+            'Salon',
+            'Salle à manger',
+            'Cuisine',
+            'Chambre principale',
+            'Chambre enfant',
+            'Bureau',
+            'Salle de bain',
+            'Cartons',
+            'Cave / Garage',
+            'Extérieur'
+        );
+        
         $output = '<option value="">Sélectionnez une pièce</option>';
         
-        foreach ($categories as $categorie) {
+        foreach ($category_order as $categorie) {
             $output .= '<option value="' . esc_attr($categorie) . '">' . esc_html($categorie) . '</option>';
         }
         

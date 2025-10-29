@@ -256,6 +256,19 @@
     font-family: 'Poppins', Arial, sans-serif;
 }
 
+/* Classe uniforme pour tous les boutons - TAILLE FIXE ET CENTRÉE */
+.novalia-btn-uniform {
+    width: 220px !important;
+    max-width: 220px !important;
+    min-width: 220px !important;
+    padding: 14px 20px !important;
+    text-align: center !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex: none !important;
+}
+
 .novalia-btn-primary {
     background: var(--novalia-turquoise);
     color: var(--novalia-white);
@@ -549,11 +562,8 @@
     display: flex;
     gap: 15px;
     margin-top: 30px;
-}
-
-.novalia-step-actions .novalia-btn {
-    flex: 1;
-    max-width: 350px;
+    justify-content: center;
+    flex-wrap: wrap;
 }
 
 /* Step 3: Recap */
@@ -904,14 +914,10 @@
     flex-wrap: wrap;
 }
 
-.success-actions .novalia-btn {
-    min-width: 200px;
+/* Les liens qui sont des boutons */
+.success-actions a.novalia-btn {
     text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    font-weight: 600;
+    color: #FFFFFF;
 }
 
 .success-actions .novalia-btn-primary {

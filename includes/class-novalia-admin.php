@@ -169,7 +169,7 @@ class Novalia_Admin {
                                             Telecharger PDF
                                         </a>
                                     <?php else : ?>
-                                        <span style="color: #999;">Non disponible</span>
+                                        <span class="dashicons dashicons-minus" style="color: #ccc;"></span>
                                     <?php endif; ?>
                                 </td>
                                 <td>
@@ -195,125 +195,125 @@ class Novalia_Admin {
         $devis = Novalia_Devis::get_devis($id);
         
         if (!$devis) {
-            echo '<div class="wrap"><h1>Devis introuvable</h1></div>';
-            return;
+            wp_die('Devis introuvable');
         }
         ?>
         <div class="wrap novalia-admin">
             <h1>Devis <?php echo esc_html($devis->numero_devis); ?></h1>
             
-            <a href="<?php echo admin_url('admin.php?page=novalia-demenagement'); ?>" class="button">← Retour a la liste</a>
-            
-            <?php if (!empty($devis->fiche_technique_pdf)) : ?>
-                <a href="<?php echo admin_url('admin.php?novalia_download_fiche=1&devis_id=' . $devis->id); ?>" class="button button-primary" style="margin-left: 10px;">
-                    Telecharger Fiche Technique PDF
-                </a>
-            <?php endif; ?>
+            <a href="<?php echo admin_url('admin.php?page=novalia-demenagement'); ?>" class="button">&larr; Retour a la liste</a>
             
             <div class="novalia-devis-detail">
-                <div class="novalia-section">
+                <div class="devis-section">
                     <h2>Informations Client</h2>
                     <table class="form-table">
                         <tr>
-                            <th>Nom:</th>
+                            <th>Nom</th>
                             <td><?php echo esc_html($devis->nom_client); ?></td>
                         </tr>
                         <tr>
-                            <th>Email:</th>
+                            <th>Email</th>
                             <td><a href="mailto:<?php echo esc_attr($devis->email_client); ?>"><?php echo esc_html($devis->email_client); ?></a></td>
                         </tr>
                         <tr>
-                            <th>Telephone:</th>
-                            <td><?php echo esc_html($devis->telephone_client); ?></td>
+                            <th>Telephone</th>
+                            <td><a href="tel:<?php echo esc_attr($devis->telephone_client); ?>"><?php echo esc_html($devis->telephone_client); ?></a></td>
                         </tr>
                     </table>
                 </div>
                 
-                <div class="novalia-section">
-                    <h2>Trajet</h2>
+                <div class="devis-section">
+                    <h2>Details du Demenagement</h2>
                     <table class="form-table">
                         <tr>
-                            <th>Depart:</th>
-                            <td><?php echo esc_html($devis->adresse_depart); ?></td>
+                            <th>Date</th>
+                            <td><?php echo Novalia_Devis::format_date($devis->date_demenagement); ?></td>
                         </tr>
                         <tr>
-                            <th>Arrivee:</th>
-                            <td><?php echo esc_html($devis->adresse_arrivee); ?></td>
+                            <th>Type</th>
+                            <td><?php echo strtoupper(esc_html($devis->type_demenagement)); ?></td>
                         </tr>
                         <tr>
-                            <th>Distance:</th>
+                            <th>Adresse de depart</th>
+                            <td><?php echo nl2br(esc_html($devis->adresse_depart)); ?></td>
+                        </tr>
+                        <tr>
+                            <th>Adresse d'arrivee</th>
+                            <td><?php echo nl2br(esc_html($devis->adresse_arrivee)); ?></td>
+                        </tr>
+                        <tr>
+                            <th>Distance</th>
                             <td><?php echo number_format($devis->distance, 2); ?> km</td>
                         </tr>
                         <tr>
-                            <th>Date demenagement:</th>
-                            <td><?php echo Novalia_Devis::format_date($devis->date_demenagement); ?></td>
-                        </tr>
-                    </table>
-                </div>
-                
-                <div class="novalia-section">
-                    <h2>Tarification</h2>
-                    <table class="form-table">
-                        <tr>
-                            <th>Volume total:</th>
+                            <th>Volume total</th>
                             <td><?php echo number_format($devis->volume_total, 2); ?> m³</td>
                         </tr>
                         <tr>
-                            <th>Type demenagement:</th>
-                            <td><strong><?php echo strtoupper($devis->type_demenagement); ?></strong></td>
-                        </tr>
-                        <?php if ($devis->type_demenagement === 'complet') : ?>
-                            <tr>
-                                <th>Nombre de cartons:</th>
-                                <td><?php echo $devis->nombre_cartons; ?></td>
-                            </tr>
-                        <?php endif; ?>
-                        <tr>
-                            <th>Prix Standard:</th>
-                            <td><?php echo Novalia_Tarifs::format_prix($devis->prix_standard); ?></td>
-                        </tr>
-                        <tr>
-                            <th>Prix Complet:</th>
-                            <td><?php echo Novalia_Tarifs::format_prix($devis->prix_complet); ?></td>
+                            <th>Nombre de cartons</th>
+                            <td><?php echo intval($devis->nombre_cartons); ?></td>
                         </tr>
                     </table>
                 </div>
                 
-                <div class="novalia-section">
-                    <h2>Statut</h2>
-                    <select id="novalia-devis-statut" data-devis-id="<?php echo $devis->id; ?>" class="regular-text">
-                        <option value="en_attente" <?php selected($devis->statut, 'en_attente'); ?>>En attente</option>
-                        <option value="accepte" <?php selected($devis->statut, 'accepte'); ?>>Accepte</option>
-                        <option value="refuse" <?php selected($devis->statut, 'refuse'); ?>>Refuse</option>
-                        <option value="annule" <?php selected($devis->statut, 'annule'); ?>>Annule</option>
-                    </select>
+                <div class="devis-section">
+                    <h2>Tarification</h2>
+                    <table class="form-table">
+                        <tr>
+                            <th>Prix Standard</th>
+                            <td><strong><?php echo Novalia_Tarifs::format_prix($devis->prix_standard); ?></strong></td>
+                        </tr>
+                        <tr>
+                            <th>Prix Complet</th>
+                            <td><strong><?php echo Novalia_Tarifs::format_prix($devis->prix_complet); ?></strong></td>
+                        </tr>
+                    </table>
                 </div>
                 
-                <div class="novalia-section">
-                    <h2>Objets a demenager</h2>
-                    <?php foreach ($devis->items_by_category as $categorie => $items) : ?>
-                        <h3><?php echo esc_html($categorie); ?></h3>
-                        <table class="wp-list-table widefat">
-                            <thead>
-                                <tr>
-                                    <th>Quantite</th>
-                                    <th>Objet</th>
-                                    <th>Volume unitaire</th>
-                                    <th>Volume total</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($items as $item) : ?>
+                <div class="devis-section">
+                    <h2>Statut</h2>
+                    <table class="form-table">
+                        <tr>
+                            <th>Statut actuel</th>
+                            <td>
+                                <select id="novalia-change-statut" data-devis-id="<?php echo $devis->id; ?>" class="regular-text">
+                                    <option value="en_attente" <?php selected($devis->statut, 'en_attente'); ?>>En attente</option>
+                                    <option value="accepte" <?php selected($devis->statut, 'accepte'); ?>>Accepte</option>
+                                    <option value="refuse" <?php selected($devis->statut, 'refuse'); ?>>Refuse</option>
+                                    <option value="annule" <?php selected($devis->statut, 'annule'); ?>>Annule</option>
+                                </select>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div class="devis-section">
+                    <h2>Liste des Objets</h2>
+                    <?php if (isset($devis->items_by_category)) : ?>
+                        <?php foreach ($devis->items_by_category as $categorie => $items) : ?>
+                            <h3><?php echo esc_html($categorie); ?></h3>
+                            <table class="wp-list-table widefat fixed striped">
+                                <thead>
                                     <tr>
-                                        <td><?php echo $item->quantite; ?>x</td>
-                                        <td><?php echo esc_html($item->nom_item); ?></td>
-                                        <td><?php echo number_format($item->volume, 3); ?> m³</td>
-                                        <td><?php echo number_format($item->volume * $item->quantite, 3); ?> m³</td>
+                                        <th>Quantite</th>
+                                        <th>Nom</th>
+                                        <th>Volume unitaire</th>
+                                        <th>Volume total</th>
                                     </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    <?php endforeach; ?>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($items as $item) : ?>
+                                        <tr>
+                                            <td><?php echo intval($item->quantite); ?>x</td>
+                                            <td><?php echo esc_html($item->nom_item); ?></td>
+                                            <td><?php echo number_format($item->volume, 3); ?> m³</td>
+                                            <td><?php echo number_format($item->volume * $item->quantite, 3); ?> m³</td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -321,9 +321,23 @@ class Novalia_Admin {
     }
     
     public function page_objets() {
-        if (isset($_POST['novalia_add_item']) && check_admin_referer('novalia_add_item')) {
-            Novalia_Items::add_item($_POST);
-            echo '<div class="notice notice-success"><p>Objet ajoute avec succes!</p></div>';
+        // CORRECTION : Traitement de l'ajout d'objet
+        if (isset($_POST['novalia_add_item']) && check_admin_referer('novalia_add_item_nonce')) {
+            $nom = sanitize_text_field($_POST['nom']);
+            $categorie = sanitize_text_field($_POST['categorie']);
+            $volume = floatval($_POST['volume']);
+            
+            if (!empty($nom) && !empty($categorie) && $volume > 0) {
+                $item_id = Novalia_Items::add_item($nom, $categorie, $volume);
+                
+                if ($item_id) {
+                    echo '<div class="notice notice-success is-dismissible"><p>Objet ajouté avec succès!</p></div>';
+                } else {
+                    echo '<div class="notice notice-error is-dismissible"><p>Erreur lors de l\'ajout de l\'objet.</p></div>';
+                }
+            } else {
+                echo '<div class="notice notice-error is-dismissible"><p>Veuillez remplir tous les champs correctement.</p></div>';
+            }
         }
         
         $items_by_category = Novalia_Items::get_items_by_category();
@@ -331,10 +345,10 @@ class Novalia_Admin {
         <div class="wrap novalia-admin">
             <h1>Gestion des Objets</h1>
             
-            <div class="novalia-add-form">
+            <div class="novalia-add-item-form">
                 <h2>Ajouter un nouvel objet</h2>
-                <form method="post">
-                    <?php wp_nonce_field('novalia_add_item'); ?>
+                <form method="post" action="">
+                    <?php wp_nonce_field('novalia_add_item_nonce'); ?>
                     <table class="form-table">
                         <tr>
                             <th><label for="nom">Nom de l'objet</label></th>
@@ -346,22 +360,22 @@ class Novalia_Admin {
                                 <select id="categorie" name="categorie" class="regular-text" required>
                                     <option value="">Choisir une categorie</option>
                                     <option value="Salon">Salon</option>
-                                    <option value="Salle a manger">Salle a manger</option>
+                                    <option value="Salle à manger">Salle à manger</option>
                                     <option value="Cuisine">Cuisine</option>
                                     <option value="Chambre principale">Chambre principale</option>
                                     <option value="Chambre enfant">Chambre enfant</option>
                                     <option value="Bureau">Bureau</option>
                                     <option value="Salle de bain">Salle de bain</option>
-                                    <option value="Entree">Entree</option>
-                                    <option value="Cave/Garage">Cave/Garage</option>
-                                    <option value="Exterieur">Exterieur</option>
+                                    <option value="Entrée / Couloir">Entrée / Couloir</option>
+                                    <option value="Cave / Garage">Cave / Garage</option>
+                                    <option value="Extérieur">Extérieur</option>
                                     <option value="Cartons">Cartons</option>
                                 </select>
                             </td>
                         </tr>
                         <tr>
                             <th><label for="volume">Volume (m³)</label></th>
-                            <td><input type="number" id="volume" name="volume" class="regular-text" step="0.001" required></td>
+                            <td><input type="number" id="volume" name="volume" class="regular-text" step="0.001" min="0.001" required></td>
                         </tr>
                     </table>
                     <p>

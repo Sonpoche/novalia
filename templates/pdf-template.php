@@ -238,18 +238,34 @@ $pdf->SetFillColor(255, 255, 255);
 $type_label = ($type === 'complet') ? 'Demenagement Complet' : 'Demenagement Standard';
 $prix = ($type === 'complet') ? $devis->prix_complet : $devis->prix_standard;
 
-// Calculer les composantes du prix selon vos tarifs
-$prix_base = 100; // Frais de déplacement
-$prix_distance = $devis->distance * 2.50; // 2.50 CHF/km
-$prix_volume = $devis->volume_total * 80; // 80 CHF/m³
+// Récupérer les tarifs depuis la base de données
+global $wpdb;
+$table_tarifs = $wpdb->prefix . 'novalia_tarifs';
+$tarifs = $wpdb->get_results("SELECT type_tarif, valeur FROM $table_tarifs", OBJECT_K);
+
+// Extraire les valeurs des tarifs
+$prix_base = isset($tarifs['prix_base']) ? floatval($tarifs['prix_base']->valeur) : 200.00;
+$prix_km = isset($tarifs['prix_km']) ? floatval($tarifs['prix_km']->valeur) : 2.50;
+$prix_m3 = isset($tarifs['prix_m3']) ? floatval($tarifs['prix_m3']->valeur) : 80.00;
+$prix_etage_tarif = isset($tarifs['prix_etage_sans_ascenseur']) ? floatval($tarifs['prix_etage_sans_ascenseur']->valeur) : 50.00;
+$prix_carton_tarif = isset($tarifs['prix_carton_emballage']) ? floatval($tarifs['prix_carton_emballage']->valeur) : 15.00;
+
+// Calculer les composantes du prix
+$prix_distance = $devis->distance * $prix_km;
+$prix_volume = $devis->volume_total * $prix_m3;
 $prix_etages = 0;
 
 // Prix étages sans ascenseur
+$etages_depart_count = 0;
+$etages_arrivee_count = 0;
+
 if (!$devis->ascenseur_depart && $devis->etages_depart > 0) {
-    $prix_etages += $devis->etages_depart * 25;
+    $etages_depart_count = $devis->etages_depart;
+    $prix_etages += $devis->etages_depart * $prix_etage_tarif;
 }
 if (!$devis->ascenseur_arrivee && $devis->etages_arrivee > 0) {
-    $prix_etages += $devis->etages_arrivee * 25;
+    $etages_arrivee_count = $devis->etages_arrivee;
+    $prix_etages += $devis->etages_arrivee * $prix_etage_tarif;
 }
 
 // Type de déménagement
@@ -265,36 +281,51 @@ $pdf->Cell(140, 5, '- Frais de deplacement', 1, 0, 'L', true);
 $pdf->Cell(40, 5, number_format($prix_base, 2) . ' CHF', 1, 1, 'R', true);
 
 // Détail distance
-$pdf->Cell(140, 5, '- Distance (' . number_format($devis->distance, 2) . ' km x 2.50 CHF/km)', 1, 0, 'L', true);
+$pdf->Cell(140, 5, '- Distance (' . number_format($devis->distance, 2) . ' km x ' . number_format($prix_km, 2) . ' CHF/km)', 1, 0, 'L', true);
 $pdf->Cell(40, 5, number_format($prix_distance, 2) . ' CHF', 1, 1, 'R', true);
 
 // Détail volume
-$pdf->Cell(140, 5, '- Volume (' . number_format($devis->volume_total, 2) . ' m3 x 80 CHF/m3)', 1, 0, 'L', true);
+$pdf->Cell(140, 5, '- Volume (' . number_format($devis->volume_total, 2) . ' m3 x ' . number_format($prix_m3, 2) . ' CHF/m3)', 1, 0, 'L', true);
 $pdf->Cell(40, 5, number_format($prix_volume, 2) . ' CHF', 1, 1, 'R', true);
 
 // Détail étages
 if ($prix_etages > 0) {
     $detail_etages = '- Etages sans ascenseur (';
-    if (!$devis->ascenseur_depart && $devis->etages_depart > 0) {
-        $detail_etages .= $devis->etages_depart . ' etages depart';
+    if ($etages_depart_count > 0) {
+        $detail_etages .= $etages_depart_count . ' etage' . ($etages_depart_count > 1 ? 's' : '') . ' depart';
     }
-    if (!$devis->ascenseur_arrivee && $devis->etages_arrivee > 0) {
-        if (!$devis->ascenseur_depart && $devis->etages_depart > 0) {
+    if ($etages_arrivee_count > 0) {
+        if ($etages_depart_count > 0) {
             $detail_etages .= ' + ';
         }
-        $detail_etages .= $devis->etages_arrivee . ' etages arrivee';
+        $detail_etages .= $etages_arrivee_count . ' etage' . ($etages_arrivee_count > 1 ? 's' : '') . ' arrivee';
     }
-    $detail_etages .= ' x 25 CHF/etage)';
+    $detail_etages .= ' x ' . number_format($prix_etage_tarif, 2) . ' CHF/etage)';
     
     $pdf->Cell(140, 5, $detail_etages, 1, 0, 'L', true);
     $pdf->Cell(40, 5, number_format($prix_etages, 2) . ' CHF', 1, 1, 'R', true);
 }
 
-// Emballage si complet
+// Emballage si complet UNIQUEMENT
 if ($type === 'complet' && $devis->nombre_cartons > 0) {
-    $prix_emballage = $devis->nombre_cartons * 15; // 15 CHF/carton
-    $pdf->Cell(140, 5, '- Emballage (' . $devis->nombre_cartons . ' cartons x 15 CHF/carton)', 1, 0, 'L', true);
+    $prix_emballage = $devis->nombre_cartons * $prix_carton_tarif;
+    $pdf->Cell(140, 5, '- Emballage (' . $devis->nombre_cartons . ' carton' . ($devis->nombre_cartons > 1 ? 's' : '') . ' x ' . number_format($prix_carton_tarif, 2) . ' CHF/carton)', 1, 0, 'L', true);
     $pdf->Cell(40, 5, number_format($prix_emballage, 2) . ' CHF', 1, 1, 'R', true);
+}
+
+// Réduction volume >70m³
+if ($devis->volume_total > 70) {
+    $taux_reduction = isset($tarifs['reduction_volume']) ? floatval($tarifs['reduction_volume']->valeur) : 5.00;
+    $montant_avant_reduction = $prix_base + $prix_distance + $prix_volume + $prix_etages;
+    if ($type === 'complet' && $devis->nombre_cartons > 0) {
+        $montant_avant_reduction += ($devis->nombre_cartons * $prix_carton_tarif);
+    }
+    $montant_reduction = $montant_avant_reduction * ($taux_reduction / 100);
+    
+    $pdf->SetTextColor(0, 128, 0); // Vert pour la réduction
+    $pdf->Cell(140, 5, '- Reduction volume > 70m3 (' . number_format($taux_reduction, 2) . '%)', 1, 0, 'L', true);
+    $pdf->Cell(40, 5, '- ' . number_format($montant_reduction, 2) . ' CHF', 1, 1, 'R', true);
+    $pdf->SetTextColor(60, 60, 60); // Remettre la couleur normale
 }
 
 // ============================================

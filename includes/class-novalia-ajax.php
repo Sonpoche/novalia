@@ -35,8 +35,8 @@ class Novalia_Ajax {
             'nombre_cartons' => intval($_POST['nombre_cartons']),
             'etages_depart' => intval($_POST['etages_depart']),
             'etages_arrivee' => intval($_POST['etages_arrivee']),
-            'ascenseur_depart' => isset($_POST['ascenseur_depart']) ? (bool)$_POST['ascenseur_depart'] : false,
-            'ascenseur_arrivee' => isset($_POST['ascenseur_arrivee']) ? (bool)$_POST['ascenseur_arrivee'] : false,
+            'ascenseur_depart' => isset($_POST['ascenseur_depart']) && $_POST['ascenseur_depart'] === 'true' ? true : false,
+            'ascenseur_arrivee' => isset($_POST['ascenseur_arrivee']) && $_POST['ascenseur_arrivee'] === 'true' ? true : false,
             'type_logement_depart' => isset($_POST['type_logement_depart']) ? sanitize_text_field($_POST['type_logement_depart']) : '',
             'type_logement_arrivee' => isset($_POST['type_logement_arrivee']) ? sanitize_text_field($_POST['type_logement_arrivee']) : '',
             'items' => array()
