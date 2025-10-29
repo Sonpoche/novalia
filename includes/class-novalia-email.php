@@ -51,17 +51,6 @@ class Novalia_Email {
             return false;
         }
         
-        try {
-            error_log('NOVALIA EMAIL: Debut generation fiche technique');
-            $fiche_generator = new Novalia_Fiche_Technique($devis_id);
-            $fiche_relative_path = $fiche_generator->generate_and_save();
-            unset($fiche_generator);
-            error_log('NOVALIA EMAIL: Fiche technique sauvegardee: ' . $fiche_relative_path);
-        } catch (Exception $e) {
-            error_log('NOVALIA EMAIL: ERREUR generation fiche technique (non bloquante) - ' . $e->getMessage());
-            error_log('NOVALIA EMAIL: Stack trace fiche: ' . $e->getTraceAsString());
-        }
-        
         $to = $devis->email_client;
         $subject = 'Votre devis de demenagement - ' . $devis->numero_devis;
         $message = self::get_email_template_html($devis);
@@ -260,8 +249,7 @@ class Novalia_Email {
         $message .= "Prix standard : " . number_format($devis->prix_standard, 2) . " CHF\n";
         $message .= "Prix complet : " . number_format($devis->prix_complet, 2) . " CHF\n\n";
         
-        $message .= "La fiche technique est disponible dans l'administration WordPress.\n";
-        $message .= "Accedez a l'admin pour telecharger la fiche technique.";
+        $message .= "Consultez l'administration WordPress pour plus de details.";
         
         return $message;
     }

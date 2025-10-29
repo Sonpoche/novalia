@@ -7,11 +7,9 @@ if (!defined('ABSPATH')) {
 class Novalia_Ajax {
     
     public function __construct() {
-        // Frontend AJAX
         add_action('wp_ajax_novalia_submit_devis', array($this, 'submit_devis'));
         add_action('wp_ajax_nopriv_novalia_submit_devis', array($this, 'submit_devis'));
         
-        // Admin AJAX
         add_action('wp_ajax_novalia_update_statut', array($this, 'update_statut'));
         add_action('wp_ajax_novalia_delete_devis', array($this, 'delete_devis'));
         add_action('wp_ajax_novalia_add_item', array($this, 'add_item'));
@@ -52,7 +50,6 @@ class Novalia_Ajax {
         error_log('NOVALIA DEBUG: Ascenseur départ: ' . ($data['ascenseur_depart'] ? 'OUI' : 'NON'));
         error_log('NOVALIA DEBUG: Ascenseur arrivée: ' . ($data['ascenseur_arrivee'] ? 'OUI' : 'NON'));
         
-        // Validation
         if (empty($data['nom_client']) || empty($data['email_client']) || empty($data['telephone_client'])) {
             error_log('NOVALIA: Validation échouée - champs manquants');
             wp_send_json_error(array('message' => 'Veuillez remplir tous les champs obligatoires'));
@@ -71,7 +68,6 @@ class Novalia_Ajax {
             return;
         }
         
-        // Traitement des items
         error_log('NOVALIA: Traitement de ' . count($_POST['items']) . ' items');
         foreach ($_POST['items'] as $item) {
             $data['items'][] = array(
@@ -84,7 +80,6 @@ class Novalia_Ajax {
             );
         }
         
-        // Création du devis
         error_log('NOVALIA: Appel Novalia_Devis::create_devis');
         try {
             $devis_id = Novalia_Devis::create_devis($data);
@@ -98,20 +93,10 @@ class Novalia_Ajax {
         if ($devis_id) {
             error_log('NOVALIA: Devis ID valide, préparation envoi email');
             
-            // Envoi de l'email avec gestion d'erreur
             try {
                 error_log('NOVALIA: Appel Novalia_Email::send_devis');
                 $email_sent = Novalia_Email::send_devis($devis_id);
                 error_log('NOVALIA: Email client envoyé: ' . ($email_sent ? 'OUI' : 'NON'));
-                
-                // Envoi notification à l'entreprise avec fiche technique (ne pas bloquer si erreur)
-                try {
-                    error_log('NOVALIA: Envoi notification entreprise');
-                    $notif_sent = Novalia_Email::send_entreprise_notification($devis_id);
-                    error_log('NOVALIA: Notification entreprise: ' . ($notif_sent ? 'OUI' : 'NON'));
-                } catch (Exception $notif_error) {
-                    error_log('NOVALIA: Erreur notification entreprise (non bloquante): ' . $notif_error->getMessage());
-                }
                 
                 if ($email_sent) {
                     error_log('NOVALIA: SUCCESS - Tout OK');

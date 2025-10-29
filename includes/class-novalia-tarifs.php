@@ -17,6 +17,12 @@ class Novalia_Tarifs {
         
         $default_tarifs = array(
             array(
+                'type_tarif' => 'prix_base',
+                'valeur' => 200.00,
+                'unite' => 'CHF',
+                'description' => 'Frais de déplacement'
+            ),
+            array(
                 'type_tarif' => 'prix_km',
                 'valeur' => 2.50,
                 'unite' => 'CHF/km',
@@ -35,22 +41,10 @@ class Novalia_Tarifs {
                 'description' => 'Supplément par étage sans ascenseur'
             ),
             array(
-                'type_tarif' => 'prix_base',
-                'valeur' => 200.00,
-                'unite' => 'CHF',
-                'description' => 'Prix de base du déménagement'
-            ),
-            array(
                 'type_tarif' => 'prix_carton_emballage',
                 'valeur' => 15.00,
                 'unite' => 'CHF/carton',
                 'description' => 'Prix emballage par carton (déménagement complet)'
-            ),
-            array(
-                'type_tarif' => 'prix_fourniture_carton',
-                'valeur' => 5.00,
-                'unite' => 'CHF/carton',
-                'description' => 'Prix fourniture carton (déménagement complet)'
             ),
             array(
                 'type_tarif' => 'majoration_weekend',
@@ -62,19 +56,7 @@ class Novalia_Tarifs {
                 'type_tarif' => 'reduction_volume',
                 'valeur' => 5.00,
                 'unite' => '%',
-                'description' => 'Réduction si volume > 50m³'
-            ),
-            array(
-                'type_tarif' => 'etages_depart',
-                'valeur' => 0.00,
-                'unite' => 'nombre',
-                'description' => 'Nombre d\'étages au départ (sans ascenseur)'
-            ),
-            array(
-                'type_tarif' => 'etages_arrivee',
-                'valeur' => 0.00,
-                'unite' => 'nombre',
-                'description' => 'Nombre d\'étages à l\'arrivée (sans ascenseur)'
+                'description' => 'Réduction si volume > 70m³'
             )
         );
         
@@ -100,11 +82,13 @@ class Novalia_Tarifs {
         
         $distance = floatval($data['distance']);
         $volume = floatval($data['volume']);
-        $etages_depart = intval($data['etages_depart']);
-        $etages_arrivee = intval($data['etages_arrivee']);
-        $date_demenagement = $data['date_demenagement'];
+        $etages_depart = isset($data['etages_depart']) ? intval($data['etages_depart']) : 0;
+        $etages_arrivee = isset($data['etages_arrivee']) ? intval($data['etages_arrivee']) : 0;
+        $ascenseur_depart = isset($data['ascenseur_depart']) ? (bool)$data['ascenseur_depart'] : false;
+        $ascenseur_arrivee = isset($data['ascenseur_arrivee']) ? (bool)$data['ascenseur_arrivee'] : false;
+        $date_demenagement = isset($data['date_demenagement']) ? $data['date_demenagement'] : '';
         
-        // Prix de base
+        // Frais de déplacement (prix de base)
         $prix = floatval($tarifs['prix_base']['valeur']);
         
         // Prix kilométrique
@@ -114,13 +98,16 @@ class Novalia_Tarifs {
         $prix += $volume * floatval($tarifs['prix_m3']['valeur']);
         
         // Supplément étages sans ascenseur
-        $total_etages = $etages_depart + $etages_arrivee;
+        $etages_depart_factures = (!$ascenseur_depart && $etages_depart > 0) ? $etages_depart : 0;
+        $etages_arrivee_factures = (!$ascenseur_arrivee && $etages_arrivee > 0) ? $etages_arrivee : 0;
+        $total_etages = $etages_depart_factures + $etages_arrivee_factures;
+        
         if ($total_etages > 0) {
             $prix += $total_etages * floatval($tarifs['prix_etage_sans_ascenseur']['valeur']);
         }
         
-        // Réduction si volume important
-        if ($volume > 50) {
+        // Réduction si volume important (>70m³)
+        if ($volume > 70) {
             $reduction = floatval($tarifs['reduction_volume']['valeur']) / 100;
             $prix = $prix * (1 - $reduction);
         }
@@ -145,11 +132,10 @@ class Novalia_Tarifs {
         $prix = self::calculate_prix_standard($data);
         
         // Ajout emballage cartons
-        $nombre_cartons = intval($data['nombre_cartons']);
+        $nombre_cartons = isset($data['nombre_cartons']) ? intval($data['nombre_cartons']) : 0;
         if ($nombre_cartons > 0) {
             $prix_emballage = floatval($tarifs['prix_carton_emballage']['valeur']);
-            $prix_fourniture = floatval($tarifs['prix_fourniture_carton']['valeur']);
-            $prix += $nombre_cartons * ($prix_emballage + $prix_fourniture);
+            $prix += $nombre_cartons * $prix_emballage;
         }
         
         return round($prix, 2);
@@ -167,17 +153,21 @@ class Novalia_Tarifs {
         
         $distance = floatval($data['distance']);
         $volume = floatval($data['volume']);
-        $etages_depart = intval($data['etages_depart']);
-        $etages_arrivee = intval($data['etages_arrivee']);
-        $nombre_cartons = intval($data['nombre_cartons']);
+        $etages_depart = isset($data['etages_depart']) ? intval($data['etages_depart']) : 0;
+        $etages_arrivee = isset($data['etages_arrivee']) ? intval($data['etages_arrivee']) : 0;
+        $ascenseur_depart = isset($data['ascenseur_depart']) ? (bool)$data['ascenseur_depart'] : false;
+        $ascenseur_arrivee = isset($data['ascenseur_arrivee']) ? (bool)$data['ascenseur_arrivee'] : false;
+        $nombre_cartons = isset($data['nombre_cartons']) ? intval($data['nombre_cartons']) : 0;
+        
+        $etages_depart_factures = (!$ascenseur_depart && $etages_depart > 0) ? $etages_depart : 0;
+        $etages_arrivee_factures = (!$ascenseur_arrivee && $etages_arrivee > 0) ? $etages_arrivee : 0;
         
         $detail = array(
             'prix_base' => floatval($tarifs['prix_base']['valeur']),
             'prix_distance' => $distance * floatval($tarifs['prix_km']['valeur']),
             'prix_volume' => $volume * floatval($tarifs['prix_m3']['valeur']),
-            'prix_etages' => ($etages_depart + $etages_arrivee) * floatval($tarifs['prix_etage_sans_ascenseur']['valeur']),
-            'prix_emballage' => $nombre_cartons * floatval($tarifs['prix_carton_emballage']['valeur']),
-            'prix_fourniture' => $nombre_cartons * floatval($tarifs['prix_fourniture_carton']['valeur'])
+            'prix_etages' => ($etages_depart_factures + $etages_arrivee_factures) * floatval($tarifs['prix_etage_sans_ascenseur']['valeur']),
+            'prix_emballage' => $nombre_cartons * floatval($tarifs['prix_carton_emballage']['valeur'])
         );
         
         return $detail;

@@ -41,7 +41,6 @@ class Novalia_Demenagement {
         require_once NOVALIA_PLUGIN_DIR . 'includes/class-novalia-tarifs.php';
         require_once NOVALIA_PLUGIN_DIR . 'includes/class-novalia-devis.php';
         require_once NOVALIA_PLUGIN_DIR . 'includes/class-novalia-pdf.php';
-        require_once NOVALIA_PLUGIN_DIR . 'includes/class-novalia-fiche-technique.php';
         require_once NOVALIA_PLUGIN_DIR . 'includes/class-novalia-email.php';
         require_once NOVALIA_PLUGIN_DIR . 'includes/class-novalia-admin.php';
         require_once NOVALIA_PLUGIN_DIR . 'includes/class-novalia-shortcode.php';

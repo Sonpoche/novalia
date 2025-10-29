@@ -399,6 +399,7 @@ class Novalia_Admin {
         <?php
     }
     
+    
     public function page_tarifs() {
         if (isset($_POST['novalia_update_tarifs']) && check_admin_referer('novalia_update_tarifs')) {
             foreach ($_POST['tarif'] as $type => $valeur) {
@@ -421,7 +422,7 @@ class Novalia_Admin {
                 
                 <table class="form-table">
                     <tr>
-                        <th><label>Prix de base (CHF)</label></th>
+                        <th><label>Frais de deplacement (CHF)</label></th>
                         <td><input type="number" name="tarif[prix_base]" value="<?php echo $get_tarif_value('prix_base'); ?>" step="0.01" class="regular-text"></td>
                     </tr>
                     <tr>
@@ -434,22 +435,18 @@ class Novalia_Admin {
                     </tr>
                     <tr>
                         <th><label>Prix etage sans ascenseur (CHF/etage)</label></th>
-                        <td><input type="number" name="tarif[prix_etage]" value="<?php echo $get_tarif_value('prix_etage'); ?>" step="0.01" class="regular-text"></td>
+                        <td><input type="number" name="tarif[prix_etage_sans_ascenseur]" value="<?php echo $get_tarif_value('prix_etage_sans_ascenseur'); ?>" step="0.01" class="regular-text"></td>
                     </tr>
                     <tr>
                         <th><label>Prix emballage carton (CHF/carton)</label></th>
-                        <td><input type="number" name="tarif[prix_emballage_carton]" value="<?php echo $get_tarif_value('prix_emballage_carton'); ?>" step="0.01" class="regular-text"></td>
-                    </tr>
-                    <tr>
-                        <th><label>Prix fourniture carton (CHF/carton)</label></th>
-                        <td><input type="number" name="tarif[prix_fourniture_carton]" value="<?php echo $get_tarif_value('prix_fourniture_carton'); ?>" step="0.01" class="regular-text"></td>
+                        <td><input type="number" name="tarif[prix_carton_emballage]" value="<?php echo $get_tarif_value('prix_carton_emballage'); ?>" step="0.01" class="regular-text"></td>
                     </tr>
                     <tr>
                         <th><label>Majoration weekend (%)</label></th>
                         <td><input type="number" name="tarif[majoration_weekend]" value="<?php echo $get_tarif_value('majoration_weekend'); ?>" step="0.01" class="regular-text"></td>
                     </tr>
                     <tr>
-                        <th><label>Reduction volume >50m³ (%)</label></th>
+                        <th><label>Reduction volume >70m³ (%)</label></th>
                         <td><input type="number" name="tarif[reduction_volume]" value="<?php echo $get_tarif_value('reduction_volume'); ?>" step="0.01" class="regular-text"></td>
                     </tr>
                 </table>
@@ -461,6 +458,7 @@ class Novalia_Admin {
         </div>
         <?php
     }
+    
     
     public function page_stats() {
         $stats = Novalia_Devis::get_devis_stats();

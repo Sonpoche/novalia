@@ -75,54 +75,6 @@ class Novalia_PDF {
         return $this->pdf->Output('', 'S');
     }
     
-    public function generate_and_save_fiche_technique() {
-        error_log('NOVALIA PDF: Generation fiche technique ID=' . $this->devis->id);
-        
-        $this->init_pdf();
-        
-        $template_path = NOVALIA_PLUGIN_DIR . 'templates/fiche-technique-template.php';
-        
-        if (!file_exists($template_path)) {
-            error_log('NOVALIA PDF: Template fiche technique introuvable: ' . $template_path);
-            throw new Exception('Template fiche technique introuvable');
-        }
-        
-        $this->pdf->AddPage();
-        
-        $devis = $this->devis;
-        $type = $devis->type_demenagement;
-        $pdf = $this->pdf;
-        
-        ob_start();
-        include $template_path;
-        ob_end_clean();
-        
-        $upload_dir = wp_upload_dir();
-        $fiches_dir = $upload_dir['basedir'] . '/novalia-fiches-techniques/';
-        
-        if (!file_exists($fiches_dir)) {
-            wp_mkdir_p($fiches_dir);
-        }
-        
-        $filename = 'fiche_' . $devis->numero_devis . '_' . time() . '.pdf';
-        $file_path = $fiches_dir . $filename;
-        
-        try {
-            $this->pdf->Output($file_path, 'F');
-            error_log('NOVALIA PDF: Fiche technique generee: ' . $file_path);
-            
-            $relative_path = '/novalia-fiches-techniques/' . $filename;
-            
-            Novalia_Database::update_devis_fiche_technique($this->devis->id, $relative_path);
-            
-            return $relative_path;
-            
-        } catch (Exception $e) {
-            error_log('NOVALIA PDF: Erreur generation fiche: ' . $e->getMessage());
-            throw $e;
-        }
-    }
-    
     private function generate_without_template($type) {
         $this->pdf->AddPage();
         
