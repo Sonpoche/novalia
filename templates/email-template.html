@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Devis Novalia Group</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border: 1px solid #dddddd;
+        }
+        .header {
+            background-color: #1A2332;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            color: #FFFFFF;
+            font-size: 28px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .content p {
+            margin: 0 0 15px 0;
+            font-size: 15px;
+            color: #444444;
+        }
+        .devis-box {
+            background-color: #f8f8f8;
+            border-left: 4px solid #2BBBAD;
+            padding: 20px;
+            margin: 25px 0;
+        }
+        .devis-box h2 {
+            margin: 0 0 10px 0;
+            font-size: 18px;
+            color: #1A2332;
+        }
+        .devis-box p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        .info-important {
+            background-color: #fff3e6;
+            border-left: 4px solid #FF7A00;
+            padding: 15px;
+            margin: 25px 0;
+            font-size: 14px;
+        }
+        .footer {
+            background-color: #f8f8f8;
+            padding: 20px;
+            text-align: center;
+            border-top: 1px solid #dddddd;
+        }
+        .footer p {
+            margin: 5px 0;
+            font-size: 13px;
+            color: #666666;
+        }
+        .footer a {
+            color: #2BBBAD;
+            text-decoration: none;
+        }
+        @media only screen and (max-width: 600px) {
+            .content {
+                padding: 25px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <img src="https://novaliagroup.ch/wp-content/plugins/novalia-demenagement/assets/images/logo-novalia-white.png" 
+                 alt="Novalia Group" 
+                 style="max-width: 250px; height: auto; display: block; margin: 0 auto;">
+        </div>
+        
+        <div class="content">
+            <p>Bonjour <strong>{{NOM_CLIENT}}</strong>,</p>
+            
+            <p>Nous vous remercions pour votre demande de devis.</p>
+            
+            <div class="devis-box">
+                <h2>Votre devis N° {{NUMERO_DEVIS}}</h2>
+                <p><strong>Date du déménagement :</strong> {{DATE_DEMENAGEMENT}}</p>
+                <p>Vous trouverez ci-joint votre devis en pièce jointe au format PDF.</p>
+            </div>
+            
+            <div class="info-important">
+                <strong>⚠️ Important :</strong> Ce devis est une estimation basée sur les informations que vous nous avez transmises. Une visite technique sera nécessaire pour établir un devis définitif.
+            </div>
+            
+            <p>Notre équipe vous contactera dans les plus brefs délais pour convenir d'un rendez-vous.</p>
+            
+            <p style="margin-top: 30px;">Cordialement,</p>
+            <p><strong>L'équipe Novalia Group</strong></p>
+        </div>
+        
+        <div class="footer">
+            <p><strong>NOVALIA GROUP</strong></p>
+            <p>Email : <a href="mailto:info@novaliagroup.ch">info@novaliagroup.ch</a></p>
+            <p>Web : <a href="https://www.novaliagroup.ch">www.novaliagroup.ch</a></p>
+        </div>
+    </div>
+</body>
+</html>
