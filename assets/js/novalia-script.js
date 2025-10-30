@@ -527,7 +527,7 @@ jQuery(document).ready(function($) {
         
         for (const [categorie, items] of Object.entries(itemsByCategory)) {
             const $categoryDiv = $('<div>').addClass('recap-category');
-            $('<h4>').text(categorie).appendTo($categoryDiv);
+            $('<h4>').text(categorie.toUpperCase()).appendTo($categoryDiv);
             
             const $itemsList = $('<div>').addClass('recap-category-items');
             items.forEach(function(item) {

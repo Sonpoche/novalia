@@ -102,7 +102,7 @@ class Novalia_Shortcode {
                             <span class="distance-value" id="distance-display">-</span>
                         </div>
                         
-                        <button type="button" class="novalia-btn novalia-btn-next novalia-btn-uniform" id="btn-step-1" disabled>
+                        <button type="button" class="novalia-btn novalia-btn-next " id="btn-step-1" disabled>
                             Suivant
                         </button>
                     </div>
@@ -126,7 +126,7 @@ class Novalia_Shortcode {
                                         <select id="custom-item-category" class="novalia-input">
                                             <?php echo $this->render_category_options(); ?>
                                         </select>
-                                        <button type="button" id="btn-add-custom" class="novalia-btn novalia-btn-secondary novalia-btn-uniform">Ajouter</button>
+                                        <button type="button" id="btn-add-custom" class="novalia-btn novalia-btn-secondary ">Ajouter</button>
                                     </div>
                                 </div>
                             </div>
@@ -149,10 +149,10 @@ class Novalia_Shortcode {
                         </div>
                         
                         <div class="novalia-step-actions">
-                            <button type="button" class="novalia-btn novalia-btn-secondary novalia-btn-uniform btn-prev" data-prev="1">
+                            <button type="button" class="novalia-btn novalia-btn-secondary  btn-prev" data-prev="1">
                                 Précédent
                             </button>
-                            <button type="button" class="novalia-btn novalia-btn-next novalia-btn-uniform" id="btn-step-2">
+                            <button type="button" class="novalia-btn novalia-btn-next " id="btn-step-2">
                                 Suivant
                             </button>
                         </div>
@@ -241,11 +241,12 @@ class Novalia_Shortcode {
                                         <div class="type-card">
                                             <h4>Standard</h4>
                                             <ul class="prestations-list">
-                                                <li>✓ Mise à disposition des cartons</li>
-                                                <li>✓ Chargement et déchargement par notre équipe</li>
+                                                <li>✓ Mise à disposition des cartons, scotch</li>
+                                                <li>✓ Emballage et protection du mobilier</li>
+                                                <li>✓ Chargement et déchargement par notre équipe professionnelle</li>
                                                 <li>✓ Transport sécurisé en véhicule adapté</li>
-                                                <li>✓ Matériel de manutention fourni</li>
-                                                <li>✓ Assistance au démontage si nécessaire</li>
+                                                <li>✓ Démontage et remontage du mobilier</li>
+                                                <li>✓ Mise en place du mobilier dans le nouvel appartement</li>
                                                 <li>✓ Assurance transport incluse</li>
                                             </ul>
                                         </div>
@@ -257,10 +258,8 @@ class Novalia_Shortcode {
                                             <p class="type-subtitle">Tranquillité totale — vous n'avez rien à gérer</p>
                                             <ul class="prestations-list">
                                                 <li class="prestation-highlight">✓ Toutes les prestations Standard incluses</li>
-                                                <li>✓ Emballage et protection du mobilier</li>
-                                                <li>✓ Démontage et remontage du mobilier</li>
-                                                <li>✓ Transport sécurisé avec véhicules capitonnés</li>
-                                                <li>✓ Mise en place du mobilier à l'arrivée</li>
+                                                <li>✓ Emballage des cartons et protection du mobilier (papier bulle, couvertures, cartons, penderies, housses de protection literie)</li>
+                                                <li>✓ Assurance transport incluse</li>
                                             </ul>
                                         </div>
                                     </label>
@@ -297,10 +296,10 @@ class Novalia_Shortcode {
                         </div>
                         
                         <div class="novalia-step-actions">
-                            <button type="button" class="novalia-btn novalia-btn-secondary novalia-btn-uniform btn-prev" data-prev="2">
+                            <button type="button" class="novalia-btn novalia-btn-secondary  btn-prev" data-prev="2">
                                 Précédent
                             </button>
-                            <button type="button" class="novalia-btn novalia-btn-primary novalia-btn-uniform" id="btn-submit-devis">
+                            <button type="button" class="novalia-btn novalia-btn-primary " id="btn-submit-devis">
                                 Recevoir mon devis
                             </button>
                         </div>
@@ -315,11 +314,18 @@ class Novalia_Shortcode {
                             <p id="success-devis-details">Nous vous avons envoyé <strong>2 devis</strong>: un pour le déménagement standard et un pour le déménagement complet.</p>
                             <p class="success-subtitle">Notre équipe vous contactera rapidement pour planifier une visite sur place.</p>
                             
+                            <div class="novalia-spam-notice">
+                                <div class="spam-content">
+                                    <strong>N'oubliez pas de vérifier vos courriers indésirables !</strong>
+                                    <p>Si vous ne recevez rien d'ici 1 heure, consultez votre dossier spam ou contactez-nous directement.</p>
+                                </div>
+                            </div>
+                            
                             <div class="success-actions">
-                                <button class="novalia-btn novalia-btn-secondary novalia-btn-uniform" id="btn-refaire-estimation">
+                                <button class="novalia-btn novalia-btn-secondary " id="btn-refaire-estimation">
                                     Refaire mon estimation
                                 </button>
-                                <a href="<?php echo esc_url(home_url('/')); ?>" class="novalia-btn novalia-btn-primary novalia-btn-uniform">
+                                <a href="<?php echo esc_url(home_url('/')); ?>" class="novalia-btn novalia-btn-primary ">
                                     Retour à l'accueil
                                 </a>
                             </div>

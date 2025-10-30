@@ -244,72 +244,6 @@
     color: var(--novalia-turquoise);
 }
 
-/* Buttons */
-.novalia-btn {
-    padding: 14px 32px;
-    border: none;
-    border-radius: 8px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-family: 'Poppins', Arial, sans-serif;
-}
-
-/* Classe uniforme pour tous les boutons - TAILLE FIXE ET CENTRÉE */
-.novalia-btn-uniform {
-    width: 220px !important;
-    max-width: 220px !important;
-    min-width: 220px !important;
-    padding: 14px 20px !important;
-    text-align: center !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    flex: none !important;
-}
-
-.novalia-btn-primary {
-    background: var(--novalia-turquoise);
-    color: var(--novalia-white);
-}
-
-.novalia-btn-primary:hover {
-    background: #25a99c;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(43, 187, 173, 0.3);
-}
-
-.novalia-btn-next {
-    background: var(--novalia-turquoise);
-    color: var(--novalia-white);
-    width: 100%;
-    margin-top: 20px;
-}
-
-.novalia-btn-next:hover:not(:disabled) {
-    background: #25a99c;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(43, 187, 173, 0.3);
-}
-
-.novalia-btn-next:disabled {
-    background: #ccc;
-    cursor: not-allowed;
-    opacity: 0.6;
-}
-
-.novalia-btn-secondary {
-    background: var(--novalia-gray);
-    color: var(--novalia-blue);
-    width: 100%;
-    margin-top: 20px;
-}
-
-.novalia-btn-secondary:hover {
-    background: #E0E0E0;
-    transform: translateY(-2px);
-}
 
 /* Step 2: Inventory Layout */
 .novalia-step2-layout {
@@ -557,14 +491,6 @@
     opacity: 0.9;
 }
 
-/* Step Actions */
-.novalia-step-actions {
-    display: flex;
-    gap: 15px;
-    margin-top: 30px;
-    justify-content: center;
-    flex-wrap: wrap;
-}
 
 /* Step 3: Recap */
 .novalia-recap {
@@ -906,34 +832,6 @@
     margin-top: 30px;
 }
 
-.success-actions {
-    display: flex;
-    gap: 15px;
-    justify-content: center;
-    margin-top: 40px;
-    flex-wrap: wrap;
-}
-
-/* Les liens qui sont des boutons */
-.success-actions a.novalia-btn {
-    text-decoration: none;
-    color: #FFFFFF;
-}
-
-.success-actions .novalia-btn-primary {
-    color: #FFFFFF !important;
-}
-
-.novalia-btn-secondary {
-    background: #FFFFFF;
-    color: var(--novalia-turquoise);
-    border: 2px solid var(--novalia-turquoise);
-}
-
-.novalia-btn-secondary:hover {
-    background: var(--novalia-turquoise);
-    color: #FFFFFF;
-}
 
 /* Responsive */
 @media (max-width: 768px) {
@@ -970,9 +868,6 @@
         grid-template-columns: 1fr;
     }
     
-    .novalia-step-actions {
-        flex-direction: column;
-    }
     
     /* Amélioration visibilité catégories fermées sur mobile */
     .novalia-category:not(.open) .category-header {
@@ -1027,5 +922,189 @@
     #recap-items-container {
         max-height: none !important;
         overflow: visible !important;
+    }
+}
+
+/* ========================================
+   BOUTONS DE NAVIGATION - Section nettoyée
+   ======================================== */
+
+/* Classe de base pour tous les boutons de navigation */
+.novalia-btn {
+    padding: 14px 28px;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Poppins', Arial, sans-serif;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+}
+
+/* Bouton Primaire (Recevoir mon devis, Retour à l'accueil) */
+.novalia-btn-primary {
+    background: var(--novalia-turquoise);
+    color: var(--novalia-white);
+    border-color: var(--novalia-turquoise);
+}
+
+.novalia-btn-primary:hover {
+    background: #25a99c;
+    border-color: #25a99c;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(43, 187, 173, 0.3);
+}
+
+/* Bouton Secondaire (Précédent, Refaire mon estimation) */
+.novalia-btn-secondary {
+    background: var(--novalia-white);
+    color: var(--novalia-turquoise);
+    border-color: var(--novalia-turquoise);
+}
+
+.novalia-btn-secondary:hover {
+    background: var(--novalia-turquoise);
+    color: var(--novalia-white);
+    transform: translateY(-2px);
+}
+
+/* Bouton Suivant (full width par défaut) */
+.novalia-btn-next {
+    background: var(--novalia-turquoise);
+    color: var(--novalia-white);
+    border-color: var(--novalia-turquoise);
+    width: 100%;
+    margin-top: 20px;
+}
+
+/* Quand le bouton Suivant est dans un conteneur d'actions, largeur flexible */
+.novalia-step-actions .novalia-btn-next {
+    width: auto;
+    flex: 1;
+    margin-top: 0;
+}
+
+/* Tous les boutons dans step-actions ont une largeur flexible égale */
+.novalia-step-actions .novalia-btn {
+    flex: 1;
+    min-width: 150px;
+}
+
+.novalia-btn-next:hover:not(:disabled) {
+    background: #25a99c;
+    border-color: #25a99c;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(43, 187, 173, 0.3);
+}
+
+.novalia-btn-next:disabled {
+    background: #cccccc;
+    border-color: #cccccc;
+    color: #666666;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* Conteneur des boutons en bas des formulaires */
+.novalia-step-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 30px;
+}
+
+/* Conteneur des boutons page de succès */
+.success-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 30px;
+}
+
+/* Liens stylés comme des boutons */
+.success-actions a.novalia-btn {
+    text-decoration: none;
+}
+
+/* Responsive Mobile */
+@media (max-width: 768px) {
+    .novalia-step-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .success-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .success-actions .novalia-btn {
+        width: 100%;
+        max-width: 300px;
+    }
+}
+
+/* ====================================================
+   MESSAGE SPAM - Avertissement
+   ==================================================== */
+
+
+/* Boîte d'information spam */
+.novalia-spam-notice {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 15px 20px;
+    margin: 20px 0;
+    border-radius: 6px;
+}
+
+.novalia-spam-notice .spam-content {
+    width: 100%;
+}
+
+.novalia-spam-notice .spam-content strong {
+    color: #856404;
+    display: block;
+    margin-bottom: 5px;
+    font-size: 15px;
+}
+
+.novalia-spam-notice .spam-content p {
+    margin: 0;
+    color: #856404;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* Responsive - Ajustements boutons et message spam mobile */
+@media (max-width: 768px) {
+    .novalia-btn,
+    #btn-submit-devis,
+    .success-actions .novalia-btn,
+    #btn-refaire-estimation {
+        height: 44px !important;
+        padding: 12px 16px !important;
+        font-size: 13px !important;
+    }
+    
+    .novalia-spam-notice {
+        padding: 12px 15px;
+    }
+    
+    .novalia-spam-notice .spam-content strong {
+        font-size: 14px;
+    }
+    
+    .novalia-spam-notice .spam-content p {
+        font-size: 12px;
     }
 }

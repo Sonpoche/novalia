@@ -23,6 +23,12 @@ class Novalia_Ajax {
         check_ajax_referer('novalia_nonce', 'nonce');
         error_log('NOVALIA: Nonce vérifié');
         
+        // DEBUG: Afficher les valeurs brutes reçues
+        error_log('NOVALIA DEBUG RAW: ascenseur_depart = ' . (isset($_POST['ascenseur_depart']) ? var_export($_POST['ascenseur_depart'], true) : 'NON SET'));
+        error_log('NOVALIA DEBUG RAW: ascenseur_arrivee = ' . (isset($_POST['ascenseur_arrivee']) ? var_export($_POST['ascenseur_arrivee'], true) : 'NON SET'));
+        error_log('NOVALIA DEBUG RAW: type ascenseur_depart = ' . (isset($_POST['ascenseur_depart']) ? gettype($_POST['ascenseur_depart']) : 'N/A'));
+        error_log('NOVALIA DEBUG RAW: type ascenseur_arrivee = ' . (isset($_POST['ascenseur_arrivee']) ? gettype($_POST['ascenseur_arrivee']) : 'N/A'));
+
         $data = array(
             'nom_client' => sanitize_text_field($_POST['nom_client']),
             'email_client' => sanitize_email($_POST['email_client']),
@@ -35,8 +41,8 @@ class Novalia_Ajax {
             'nombre_cartons' => intval($_POST['nombre_cartons']),
             'etages_depart' => intval($_POST['etages_depart']),
             'etages_arrivee' => intval($_POST['etages_arrivee']),
-            'ascenseur_depart' => isset($_POST['ascenseur_depart']) && $_POST['ascenseur_depart'] === 'true' ? true : false,
-            'ascenseur_arrivee' => isset($_POST['ascenseur_arrivee']) && $_POST['ascenseur_arrivee'] === 'true' ? true : false,
+            'ascenseur_depart' => isset($_POST['ascenseur_depart']) && $_POST['ascenseur_depart'] === 'true',
+            'ascenseur_arrivee' => isset($_POST['ascenseur_arrivee']) && $_POST['ascenseur_arrivee'] === 'true',
             'type_logement_depart' => isset($_POST['type_logement_depart']) ? sanitize_text_field($_POST['type_logement_depart']) : '',
             'type_logement_arrivee' => isset($_POST['type_logement_arrivee']) ? sanitize_text_field($_POST['type_logement_arrivee']) : '',
             'items' => array()
@@ -49,6 +55,8 @@ class Novalia_Ajax {
         error_log('NOVALIA DEBUG: Étages arrivée: ' . $data['etages_arrivee']);
         error_log('NOVALIA DEBUG: Ascenseur départ: ' . ($data['ascenseur_depart'] ? 'OUI' : 'NON'));
         error_log('NOVALIA DEBUG: Ascenseur arrivée: ' . ($data['ascenseur_arrivee'] ? 'OUI' : 'NON'));
+        error_log('NOVALIA DEBUG: Après conversion - ascenseur_depart = ' . var_export($data['ascenseur_depart'], true));
+        error_log('NOVALIA DEBUG: Après conversion - ascenseur_arrivee = ' . var_export($data['ascenseur_arrivee'], true));
         
         if (empty($data['nom_client']) || empty($data['email_client']) || empty($data['telephone_client'])) {
             error_log('NOVALIA: Validation échouée - champs manquants');

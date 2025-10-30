@@ -11,11 +11,8 @@ if (!defined('ABSPATH')) {
 // ============================================
 // BARRE SUPÉRIEURE - COULEUR SELON TYPE
 // ============================================
-if ($type === 'complet') {
-    $pdf->SetFillColor(43, 187, 173); // Turquoise pour complet
-} else {
-    $pdf->SetFillColor(26, 35, 50); // Bleu nuit pour standard
-}
+// Bleu nuit pour les deux types
+$pdf->SetFillColor(26, 35, 50);
 $pdf->Rect(0, 0, 210, 8, 'F');
 
 $pdf->Ln(15);
@@ -48,7 +45,7 @@ $pdf->Ln(12);
 $pdf->SetFont('helvetica', '', 9);
 $pdf->SetTextColor(80, 80, 80);
 $pdf->Cell(0, 5, 'Novalia Group', 0, 1, 'L');
-$pdf->Cell(0, 5, 'Specialiste du demenagement en Suisse', 0, 1, 'L');
+$pdf->Cell(0, 5, 'Spécialiste du déménagement en Suisse', 0, 1, 'L');
 $pdf->Cell(0, 5, 'info@novaliagroup.ch', 0, 1, 'L');
 $pdf->Cell(0, 5, 'www.novaliagroup.ch', 0, 1, 'L');
 
@@ -83,7 +80,7 @@ $pdf->SetFont('helvetica', 'B', 10);
 $pdf->SetTextColor(100, 100, 100);
 $pdf->Cell(90, 6, 'FACTURER', 0, 0, 'L');
 $pdf->SetX(110);
-$pdf->Cell(85, 6, 'ENVOYER A', 0, 1, 'L');
+$pdf->Cell(85, 6, 'ENVOYER À', 0, 1, 'L');
 
 $pdf->Ln(2);
 
@@ -108,14 +105,14 @@ $pdf->Ln(8);
 // ============================================
 $pdf->SetFont('helvetica', 'B', 11);
 $pdf->SetTextColor(26, 35, 50);
-$pdf->Cell(0, 7, 'INFORMATIONS DU DEMENAGEMENT', 0, 1, 'L');
+$pdf->Cell(0, 7, 'INFORMATIONS DU DÉMÉNAGEMENT', 0, 1, 'L');
 
 $pdf->Ln(2);
 
 // Date du déménagement (sur toute la largeur)
 $pdf->SetFont('helvetica', 'B', 9);
 $pdf->SetTextColor(60, 60, 60);
-$pdf->Cell(50, 5, 'Date du demenagement :', 0, 0, 'L');
+$pdf->Cell(50, 5, 'Date du déménagement :', 0, 0, 'L');
 $pdf->SetFont('helvetica', '', 9);
 $pdf->Cell(0, 5, date('d.m.Y', strtotime($devis->date_demenagement)), 0, 1, 'L');
 
@@ -126,31 +123,34 @@ $pdf->Ln(3);
 // ============================================
 $pdf->SetFont('helvetica', 'B', 10);
 $pdf->SetTextColor(100, 100, 100);
-$pdf->Cell(90, 6, 'DEPART', 0, 0, 'L');
+$pdf->Cell(90, 6, 'DÉPART', 0, 0, 'L');
 $pdf->SetX(110);
-$pdf->Cell(85, 6, 'ARRIVEE', 0, 1, 'L');
+$pdf->Cell(85, 6, 'ARRIVÉE', 0, 1, 'L');
 
 $pdf->Ln(2);
 
 // ============================================
-// ADRESSES (en gras et tronqué si trop long)
+// ADRESSES (en gras, affichage complet)
 // ============================================
 $pdf->SetFont('helvetica', 'B', 8);
 $pdf->SetTextColor(60, 60, 60);
 
-// Adresse départ
-$adresse_depart_short = strlen($devis->adresse_depart) > 50 
-    ? substr($devis->adresse_depart, 0, 47) . '...' 
-    : $devis->adresse_depart;
-$pdf->Cell(90, 5, $adresse_depart_short, 0, 0, 'L');
+// Sauvegarder la position Y de départ
+$start_y = $pdf->GetY();
 
-$pdf->SetX(110);
+// Adresse départ (colonne de gauche)
+$pdf->SetXY(15, $start_y);
+$pdf->MultiCell(90, 4, $devis->adresse_depart, 0, 'L');
+$end_y_depart = $pdf->GetY();
 
-// Adresse arrivée
-$adresse_arrivee_short = strlen($devis->adresse_arrivee) > 50 
-    ? substr($devis->adresse_arrivee, 0, 47) . '...' 
-    : $devis->adresse_arrivee;
-$pdf->Cell(85, 5, $adresse_arrivee_short, 0, 1, 'L');
+// Adresse arrivée (colonne de droite)
+$pdf->SetXY(110, $start_y);
+$pdf->MultiCell(85, 4, $devis->adresse_arrivee, 0, 'L');
+$end_y_arrivee = $pdf->GetY();
+
+// Positionner le curseur après la plus longue des deux adresses
+$max_y = max($end_y_depart, $end_y_arrivee);
+$pdf->SetY($max_y);
 
 $pdf->Ln(2);
 
@@ -161,10 +161,10 @@ $pdf->SetFont('helvetica', '', 9);
 
 $logement_depart = isset($devis->type_logement_depart) && !empty($devis->type_logement_depart) 
     ? ucfirst($devis->type_logement_depart) 
-    : 'Non specifie';
+    : 'Non spécifié';
 $logement_arrivee = isset($devis->type_logement_arrivee) && !empty($devis->type_logement_arrivee)
     ? ucfirst($devis->type_logement_arrivee)
-    : 'Non specifie';
+    : 'Non spécifié';
 
 $pdf->Cell(90, 5, 'Type : ' . $logement_depart, 0, 0, 'L');
 $pdf->SetX(110);
@@ -173,9 +173,9 @@ $pdf->Cell(85, 5, 'Type : ' . $logement_arrivee, 0, 1, 'L');
 // ============================================
 // ÉTAGES
 // ============================================
-$pdf->Cell(90, 5, 'Etage : ' . $devis->etages_depart, 0, 0, 'L');
+$pdf->Cell(90, 5, 'Étage : ' . $devis->etages_depart, 0, 0, 'L');
 $pdf->SetX(110);
-$pdf->Cell(85, 5, 'Etage : ' . $devis->etages_arrivee, 0, 1, 'L');
+$pdf->Cell(85, 5, 'Étage : ' . $devis->etages_arrivee, 0, 1, 'L');
 
 // ============================================
 // ASCENSEURS
@@ -213,14 +213,10 @@ $pdf->Cell(0, 5, number_format($devis->volume_total, 2) . ' m3', 0, 1, 'L');
 $pdf->Ln(8);
 
 // ============================================
-// TABLEAU DES PRIX - EN-TÊTE BLEU NUIT OU TURQUOISE
+// TABLEAU DES PRIX - EN-TÊTE BLEU NUIT
 // ============================================
-// Turquoise pour COMPLET, Bleu nuit pour STANDARD
-if ($type === 'complet') {
-    $pdf->SetFillColor(43, 187, 173); // Turquoise
-} else {
-    $pdf->SetFillColor(26, 35, 50); // Bleu nuit
-}
+// Bleu nuit pour les deux types
+$pdf->SetFillColor(26, 35, 50);
 
 $pdf->SetTextColor(255, 255, 255);
 $pdf->SetFont('helvetica', 'B', 9);
@@ -235,7 +231,7 @@ $pdf->SetFont('helvetica', '', 9);
 $pdf->SetTextColor(60, 60, 60);
 $pdf->SetFillColor(255, 255, 255);
 
-$type_label = ($type === 'complet') ? 'Demenagement Complet' : 'Demenagement Standard';
+$type_label = ($type === 'complet') ? 'Déménagement Complet' : 'Déménagement Standard';
 $prix = ($type === 'complet') ? $devis->prix_complet : $devis->prix_standard;
 
 // Récupérer les tarifs depuis la base de données
@@ -268,16 +264,14 @@ if (!$devis->ascenseur_arrivee && $devis->etages_arrivee > 0) {
     $prix_etages += $devis->etages_arrivee * $prix_etage_tarif;
 }
 
-// Type de déménagement
+// Type de déménagement - SANS MONTANT (modification demandée)
 $pdf->SetFont('helvetica', 'B', 10);
-$pdf->Cell(140, 6, $type_label, 1, 0, 'L', true);
-$pdf->SetFont('helvetica', 'B', 10);
-$pdf->Cell(40, 6, number_format($prix, 2) . ' CHF', 1, 1, 'R', true);
+$pdf->Cell(180, 6, $type_label, 1, 1, 'L', true);
 
 $pdf->SetFont('helvetica', '', 9);
 
 // Détail prix de base
-$pdf->Cell(140, 5, '- Frais de deplacement', 1, 0, 'L', true);
+$pdf->Cell(140, 5, '- Frais de déplacement', 1, 0, 'L', true);
 $pdf->Cell(40, 5, number_format($prix_base, 2) . ' CHF', 1, 1, 'R', true);
 
 // Détail distance
@@ -290,17 +284,17 @@ $pdf->Cell(40, 5, number_format($prix_volume, 2) . ' CHF', 1, 1, 'R', true);
 
 // Détail étages
 if ($prix_etages > 0) {
-    $detail_etages = '- Etages sans ascenseur (';
+    $detail_etages = '- Étages sans ascenseur (';
     if ($etages_depart_count > 0) {
-        $detail_etages .= $etages_depart_count . ' etage' . ($etages_depart_count > 1 ? 's' : '') . ' depart';
+        $detail_etages .= $etages_depart_count . ' étage' . ($etages_depart_count > 1 ? 's' : '') . ' départ';
     }
     if ($etages_arrivee_count > 0) {
         if ($etages_depart_count > 0) {
             $detail_etages .= ' + ';
         }
-        $detail_etages .= $etages_arrivee_count . ' etage' . ($etages_arrivee_count > 1 ? 's' : '') . ' arrivee';
+        $detail_etages .= $etages_arrivee_count . ' étage' . ($etages_arrivee_count > 1 ? 's' : '') . ' arrivée';
     }
-    $detail_etages .= ' x ' . number_format($prix_etage_tarif, 2) . ' CHF/etage)';
+    $detail_etages .= ' x ' . number_format($prix_etage_tarif, 2) . ' CHF/étage)';
     
     $pdf->Cell(140, 5, $detail_etages, 1, 0, 'L', true);
     $pdf->Cell(40, 5, number_format($prix_etages, 2) . ' CHF', 1, 1, 'R', true);
@@ -323,7 +317,7 @@ if ($devis->volume_total > 70) {
     $montant_reduction = $montant_avant_reduction * ($taux_reduction / 100);
     
     $pdf->SetTextColor(0, 128, 0); // Vert pour la réduction
-    $pdf->Cell(140, 5, '- Reduction volume > 70m3 (' . number_format($taux_reduction, 2) . '%)', 1, 0, 'L', true);
+    $pdf->Cell(140, 5, '- Réduction volume > 70m3 (' . number_format($taux_reduction, 2) . '%)', 1, 0, 'L', true);
     $pdf->Cell(40, 5, '- ' . number_format($montant_reduction, 2) . ' CHF', 1, 1, 'R', true);
     $pdf->SetTextColor(60, 60, 60); // Remettre la couleur normale
 }
@@ -339,21 +333,79 @@ $pdf->Cell(40, 8, number_format($prix, 2) . ' CHF', 1, 1, 'R', true);
 $pdf->Ln(5);
 
 // ============================================
+// PRESTATIONS INCLUSES
+// ============================================
+$pdf->SetFont('helvetica', 'B', 10);
+$pdf->SetTextColor(26, 35, 50);
+$pdf->Cell(0, 6, 'Prestations incluses :', 0, 1, 'L');
+
+$pdf->SetFont('helvetica', '', 8);
+$pdf->SetTextColor(60, 60, 60);
+
+if ($type === 'complet') {
+    $pdf->SetFont('helvetica', 'B', 9);
+    $pdf->SetTextColor(26, 35, 50);  // Bleu foncé au lieu de turquoise
+    $pdf->Cell(0, 5, 'Déménagement Complet - Tranquillité totale, vous n\'avez rien à gérer', 0, 1, 'L');
+    
+    $pdf->SetFont('helvetica', '', 8);
+    $pdf->SetTextColor(60, 60, 60);
+    
+    $prestations_complet = array(
+        'Toutes les prestations Standard incluses',
+        'Emballage des cartons et protection du mobilier (papier bulle, couvertures, cartons, penderies, housses de protection literie)',
+        'Assurance transport incluse',
+    );
+    
+    foreach ($prestations_complet as $prestation) {
+        $pdf->Cell(5, 5, '', 0, 0, 'L');
+        $pdf->SetFont('zapfdingbats', '', 8);
+        $pdf->Cell(5, 5, '4', 0, 0, 'L');
+        $pdf->SetFont('helvetica', '', 8);
+        $pdf->Cell(0, 5, ' ' . $prestation, 0, 1, 'L');
+    }
+} else {
+    $pdf->SetFont('helvetica', 'B', 9);
+    $pdf->SetTextColor(26, 35, 50);
+    $pdf->Cell(0, 5, 'Déménagement Standard', 0, 1, 'L');
+    
+    $pdf->SetFont('helvetica', '', 8);
+    $pdf->SetTextColor(60, 60, 60);
+    
+    $prestations_standard = array(
+        'Mise à disposition des cartons, scotch',
+        'Emballage et protection du mobilier',
+        'Chargement et déchargement par notre équipe professionnelle',
+        'Transport sécurisé en véhicule adapté',
+        'Démontage et remontage du mobilier',
+        'Mise en place du mobilier dans le nouvel appartement',
+        'Assurance transport incluse',
+    );
+    
+    foreach ($prestations_standard as $prestation) {
+        $pdf->Cell(5, 5, '', 0, 0, 'L');
+        $pdf->SetFont('zapfdingbats', '', 8);
+        $pdf->Cell(5, 5, '4', 0, 0, 'L');
+        $pdf->SetFont('helvetica', '', 8);
+        $pdf->Cell(0, 5, ' ' . $prestation, 0, 1, 'L');
+    }
+}
+
+$pdf->Ln(5);
+
+
+// ============================================
 // REMARQUES
 // ============================================
 $pdf->SetFont('helvetica', 'I', 8);
 $pdf->SetTextColor(100, 100, 100);
-$pdf->MultiCell(0, 4, 'Ce devis est une estimation basee sur les informations fournies. Une visite sur place sera necessaire pour etablir un devis definitif et precis. Les prix peuvent varier en fonction des conditions reelles constatees lors de la visite. Duree de validite: 30 jours.', 0, 'L');
+$pdf->MultiCell(0, 4, 'Ce devis est une estimation basée sur les informations fournies. Une visite sur place sera nécessaire pour établir un devis définitif et précis. Les prix peuvent varier en fonction des conditions réelles constatées lors de la visite. Durée de validité : 30 jours.', 0, 'L');
 
 // ============================================
 // BARRE INFÉRIEURE - COULEUR SELON TYPE
 // ============================================
 $pdf->SetY(-15);
-if ($type === 'complet') {
-    $pdf->SetFillColor(43, 187, 173); // Turquoise
-} else {
-    $pdf->SetFillColor(26, 35, 50); // Bleu nuit
-}
+// Bleu nuit pour les deux types
+$pdf->SetFillColor(26, 35, 50);
 $pdf->Rect(0, $pdf->GetY(), 210, 8, 'F');
 
 // ============================================
@@ -361,25 +413,21 @@ $pdf->Rect(0, $pdf->GetY(), 210, 8, 'F');
 // ============================================
 $pdf->AddPage();
 
-// Barre supérieure conditionnelle
-if ($type === 'complet') {
-    $pdf->SetFillColor(43, 187, 173);
-} else {
-    $pdf->SetFillColor(26, 35, 50);
-}
+// Barre supérieure - Bleu nuit pour les deux types
+$pdf->SetFillColor(26, 35, 50);
 $pdf->Rect(0, 0, 210, 8, 'F');
 
 $pdf->Ln(12);
 
 $pdf->SetFont('helvetica', 'B', 18);
 $pdf->SetTextColor(100, 100, 100);
-$pdf->Cell(0, 10, 'RECAPITULATIF DES OBJETS', 0, 1, 'C');
+$pdf->Cell(0, 10, 'RÉCAPITULATIF DES OBJETS', 0, 1, 'C');
 
 $pdf->Ln(5);
 
 $pdf->SetFont('helvetica', '', 9);
 $pdf->SetTextColor(120, 120, 120);
-$pdf->Cell(0, 5, 'Liste detaillee des objets a demenager', 0, 1, 'C');
+$pdf->Cell(0, 5, 'Liste détaillée des objets à déménager', 0, 1, 'C');
 
 $pdf->Ln(8);
 
@@ -403,13 +451,11 @@ foreach ($items as $item) {
 // Afficher par catégorie
 foreach ($items_by_category as $categorie => $category_items) {
     $pdf->SetFont('helvetica', 'B', 10);
-    if ($type === 'complet') {
-        $pdf->SetFillColor(43, 187, 173);
-    } else {
-        $pdf->SetFillColor(26, 35, 50);
-    }
+    // Bleu nuit pour les deux types
+    $pdf->SetFillColor(26, 35, 50);
     $pdf->SetTextColor(255, 255, 255);
-    $pdf->Cell(0, 7, strtoupper($categorie), 0, 1, 'L', true);
+    // Utilisation de mb_strtoupper pour gérer correctement les accents en majuscules
+    $pdf->Cell(0, 7, mb_strtoupper($categorie, 'UTF-8'), 0, 1, 'L', true);
     
     $pdf->Ln(1);
     
@@ -444,20 +490,14 @@ foreach ($items_by_category as $categorie => $category_items) {
 
 // VOLUME TOTAL FINAL
 $pdf->SetFont('helvetica', 'B', 11);
-if ($type === 'complet') {
-    $pdf->SetFillColor(43, 187, 173);
-} else {
-    $pdf->SetFillColor(26, 35, 50);
-}
+// Bleu nuit pour les deux types
+$pdf->SetFillColor(26, 35, 50);
 $pdf->SetTextColor(255, 255, 255);
 $pdf->Cell(155, 8, 'VOLUME TOTAL', 1, 0, 'R', true);
 $pdf->Cell(25, 8, number_format($devis->volume_total, 3) . ' m3', 1, 1, 'R', true);
 
 // Barre inférieure
 $pdf->SetY(-15);
-if ($type === 'complet') {
-    $pdf->SetFillColor(43, 187, 173);
-} else {
-    $pdf->SetFillColor(26, 35, 50);
-}
+// Bleu nuit pour les deux types
+$pdf->SetFillColor(26, 35, 50);
 $pdf->Rect(0, $pdf->GetY(), 210, 8, 'F');
